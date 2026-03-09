@@ -4,7 +4,7 @@ compatibility_date = "2024-01-01"
 
 [[kv_namespaces]]
 binding = "ML_KV"
-id = e3ef07f3021c47228da0cb0ccfaed0ef"
+id = "9ec9c5f2335e401e877ebde3c39922b2"
 preview_id = "e3ef07f3021c47228da0cb0ccfaed0ef"
 
 [vars]
