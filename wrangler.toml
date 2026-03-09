@@ -4,13 +4,13 @@ compatibility_date = "2024-01-01"
 
 [[kv_namespaces]]
 binding = "ML_KV"
-id = "PEGAR_KV_ID_AQUI"
-preview_id = "PEGAR_KV_PREVIEW_ID_AQUI"
+id = e3ef07f3021c47228da0cb0ccfaed0ef"
+preview_id = "e3ef07f3021c47228da0cb0ccfaed0ef"
 
 [vars]
 ADMIN_PIN = "2817"
 LAURA_PIN = "laura2024"
-PABLO_EMAIL = "pablo@mercadolimpio.com"
+PABLO_EMAIL = "	santamariapablodaniel@gmail.com"
 
 # Secrets — cargar con: wrangler secret put GEMINI_API_KEY
 # GEMINI_API_KEY  → tu API key de Google AI Studio
