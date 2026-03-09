@@ -1,0 +1,22 @@
+name = "mercadolimpio-intelligence"
+main = "worker_ml.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "ML_KV"
+id = "YOUR_KV_NAMESPACE_ID"
+preview_id = "YOUR_KV_PREVIEW_ID"
+
+[vars]
+ADMIN_PIN = "2817"
+LAURA_PIN = "laura2024"
+ANTHROPIC_API_KEY = "YOUR_ANTHROPIC_API_KEY"
+BREVO_API_KEY = "YOUR_BREVO_API_KEY"
+PABLO_EMAIL = "pablo@mercadolimpio.com"
+
+[[triggers]]
+crons = [
+  "0 11 * * 1",
+  "0 13 1 * *",
+  "0 8 * * 1-5"
+]
