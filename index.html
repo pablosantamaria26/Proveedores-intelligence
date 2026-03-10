@@ -620,27 +620,7 @@ function toast(msg,type='',dur=3200){
 }
 function setLoading(on,txt='Cargando...'){$('loading').style.display=on?'flex':'none';$('loading-txt').textContent=txt;}
 
-// ── STORAGE ─────────────────────────────────────────
-const KEY='ml_prov_v2';
-function loadDB(){
-  try{
-    const raw=localStorage.getItem(KEY);
-    if(raw) return JSON.parse(raw);
-  }catch(e){}
-  // Primera vez: cargar datos del Excel 2026
-  const db={
-    compras: IMPORT_2026.map(c=>({...c, observaciones:'', importado:true})),
-    proveedores: PROVS_IMPORT.map(n=>({id:uid(),nombre:n})),
-    version:2
-  };
-  saveDB(db);
-  return db;
-}
-function saveDB(db){ localStorage.setItem(KEY,JSON.stringify(db)); }
 
-// ── ESTADO ──────────────────────────────────────────
-let DB = loadDB();
-let STATE = { role:'laura', pagarId:null, editId:null };
 
 // ── CALCULAR ESTADO DINÁMICO ────────────────────────
 function calcEstado(c){
@@ -1401,11 +1381,6 @@ const App = {
   },
 };
 
-// ── INIT ─────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded',()=>{
-  const logoSrc='data:image/png;base64,'+LOGO_B64;
-  $('pin-logo').src=logoSrc;
-});
 </script>
 </body>
 </html>
