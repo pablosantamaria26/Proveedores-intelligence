@@ -1269,8 +1269,7 @@ function exportarCSV() {
   const pagadas = state.compras.filter(c => c.estado === 'pagado');
   const rows = [['Proveedor','Fecha Compra','Fecha Pago','Monto','Observaciones']];
   pagadas.forEach(c => rows.push([c.proveedor, c.fecha, c.fechaPago||'', c.monto, c.observaciones||'']));
-  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('
-');
+  const csv = rows.map(r => r.map(v => '"' + v + '"').join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'historial_pagos.csv'; a.click();
@@ -1390,8 +1389,7 @@ async function sendChat() {
 
   const reply = res?.reply || res?.error || 'Error al conectar con IA.';
   state.chatHistory.push({ role: 'model', parts: [{ text: reply }] });
-  addChatMsg('ai', reply.replace(/
-/g, '<br>'));
+  addChatMsg('ai', reply.split('\n').join('<br>'));
 }
 
 // ════════════════════════════════════════════════════
@@ -1457,8 +1455,7 @@ async function simular() {
 
   const res = await apiPost('/api/simular', { monto, dias, contexto: ctx });
   if (res?.analisis) {
-    el.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:16px;font-size:14px;line-height:1.7">${res.analisis.replace(/
-/g,'<br>')}</div>`;
+    el.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:16px;font-size:14px;line-height:1.7">${res.analisis.split('\n').join('<br>')}</div>`;
   } else {
     el.innerHTML = `<p style="color:var(--danger)">${res?.error||'Error al simular'}</p>`;
   }
