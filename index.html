@@ -322,6 +322,29 @@ select.filter{min-width:140px}input.filter{min-width:180px}
 <div class="modal-footer"><button class="btn" onclick="closeModal('m-detalle')">Cerrar</button><button class="btn" onclick="genPDF()">📄 Resumen PDF</button></div>
 </div></div>
 
+<div class="overlay" id="m-base"><div class="modal" style="max-width:600px;background:#1e293b;color:#fff;border:1px solid rgba(255,255,255,.1)">
+<h2 style="color:#fff;border-color:rgba(255,255,255,.1)">📋 Base del año ${new Date().getFullYear()}</h2>
+<p style="color:rgba(255,255,255,.55);font-size:14px;margin-bottom:20px;line-height:1.6">Es la primera vez que entrás este año. Cargá los <strong style="color:#fff">3 archivos acumulados</strong> (desde enero hasta la semana ante-pasada). Esto le da al sistema la base para comparar tus semanas.</p>
+<div class="pp-upload" style="margin-bottom:16px">
+  <div class="up-zone" onclick="document.getElementById('up-b-ganc').click()" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12)">
+    <div class="up-icon">📊</div><div class="up-title">Ranking Ganancia</div><div class="up-desc" style="color:rgba(255,255,255,.35)">Acumulado del año</div>
+    <div class="up-status" id="st-b-ganc"></div>
+    <input type="file" id="up-b-ganc" accept=".xlsx,.xls,.csv" onchange="uploadBase(this,'ranking_ganancia')">
+  </div>
+  <div class="up-zone" onclick="document.getElementById('up-b-vtas').click()" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12)">
+    <div class="up-icon">💰</div><div class="up-title">Ventas</div><div class="up-desc" style="color:rgba(255,255,255,.35)">Acumulado del año</div>
+    <div class="up-status" id="st-b-vtas"></div>
+    <input type="file" id="up-b-vtas" accept=".xlsx,.xls,.csv" onchange="uploadBase(this,'ventas')">
+  </div>
+  <div class="up-zone" onclick="document.getElementById('up-b-cli').click()" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12)">
+    <div class="up-icon">👥</div><div class="up-title">Clientes</div><div class="up-desc" style="color:rgba(255,255,255,.35)">Acumulado del año</div>
+    <div class="up-status" id="st-b-cli"></div>
+    <input type="file" id="up-b-cli" accept=".xlsx,.xls,.csv" onchange="uploadBase(this,'clientes')">
+  </div>
+</div>
+<div style="text-align:right"><button class="pp-back" onclick="closeModal('m-base')" style="font-size:13px">Omitir por ahora →</button></div>
+</div></div>
+
 <div class="overlay" id="m-pin"><div class="modal" style="max-width:360px"><h2 style="text-align:center">🔒 Administración</h2>
 <div class="pin-body"><p style="color:var(--text2);margin-bottom:18px;font-size:14px">Ingresá tu PIN</p>
 <input type="password" class="pin-input" id="pin-input" maxlength="10" inputmode="numeric" oninput="checkPin()">
@@ -416,12 +439,17 @@ function genPDF(){const c=compras.find(x=>x.id===currentDetailId);if(!c)return;c
 function openPin(){document.getElementById('pin-input').value='';document.getElementById('pin-error').style.display='none';openModal('m-pin');setTimeout(()=>document.getElementById('pin-input').focus(),100)}
 function checkPin(){const v=document.getElementById('pin-input').value;if(v===PIN){adminMode=true;closeModal('m-pin');enterAdmin()}else if(v.length>=4){document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value=''}}
 
-function enterAdmin(){
+async function enterAdmin(){
   document.getElementById('laura-module').style.display='none';
   document.getElementById('pablo-panel').style.display='block';
   document.body.style.background='#0f172a';
   document.getElementById('pp-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  loadDashboard();
+  // Check if base data exists
+  const kpi=await apiGet('/api/kpis');
+  if(kpi&&!kpi.estado?.tiene_base){
+    openModal('m-base');
+  }
+  loadDashboard(kpi);
 }
 
 function exitAdmin(){
@@ -441,31 +469,33 @@ function ppTab(tab){
 }
 
 // ═══ DASHBOARD ═══
-async function loadDashboard(){
-  // KPIs from compras data
+async function loadDashboard(kpiData){
+  if(!kpiData)try{kpiData=await apiGet('/api/kpis')}catch{}
+  if(!kpiData)kpiData={};
+
   const activas=compras.filter(c=>getEstado(c)!=='pagado');
   const vencidas=activas.filter(c=>getEstado(c)==='vencido');
   const deudaTotal=activas.reduce((s,c)=>s+getSaldo(c),0);
   const deudaVenc=vencidas.reduce((s,c)=>s+getSaldo(c),0);
 
-  // Try to load intelligence data from API
-  let kpiData=null;
-  try{kpiData=await apiGet('/api/kpis')}catch{}
-
-  const ventasSem=kpiData?.ventas?.semana_actual||kpiData?.ventas?.importe||0;
-  const ventasAnt=kpiData?.ventas?.semana_anterior||0;
-  const variacion=ventasAnt>0?Math.round((ventasSem/ventasAnt-1)*100):0;
+  const v=kpiData.ventas||{};
+  const ventasSem=v.semana_actual||0;
+  const promBase=v.promedio_semanal_base||0;
+  const variacion=v.variacion_pct||0;
+  const margen=v.margen_promedio||0;
+  const tieneBase=kpiData.estado?.tiene_base;
+  const tieneSemana=kpiData.estado?.tiene_semana;
 
   document.getElementById('pp-kpis').innerHTML=`
     <div class="pp-kpi${ventasSem>0?(variacion>=0?' up':' down'):''}">
       <div class="pp-kpi-label">Ventas semana</div>
       <div class="pp-kpi-val">${ventasSem>0?money(ventasSem):'Sin datos'}</div>
-      <div class="pp-kpi-sub">${ventasAnt>0?(variacion>=0?'↑':'↓')+' '+Math.abs(variacion)+'% vs anterior':'Cargá datos para comparar'}</div>
+      <div class="pp-kpi-sub">${promBase>0&&ventasSem>0?(variacion>=0?'↑':'↓')+' '+Math.abs(variacion)+'% vs promedio base':(tieneSemana?'Cargá la base para comparar':'Cargá datos semanales')}</div>
     </div>
     <div class="pp-kpi">
       <div class="pp-kpi-label">Margen promedio</div>
-      <div class="pp-kpi-val">${kpiData?.ventas?.margen_promedio||kpiData?.ventas?.margen||'—'}%</div>
-      <div class="pp-kpi-sub">Último período cargado</div>
+      <div class="pp-kpi-val">${margen>0?margen+'%':'—'}</div>
+      <div class="pp-kpi-sub">${tieneBase?'Último período':'Sin datos'}</div>
     </div>
     <div class="pp-kpi${deudaVenc>0?' down':''}">
       <div class="pp-kpi-label">Deuda proveedores</div>
@@ -475,90 +505,97 @@ async function loadDashboard(){
     <div class="pp-kpi${deudaVenc>0?' warn':''}">
       <div class="pp-kpi-label">Vencido</div>
       <div class="pp-kpi-val">${money(deudaVenc)}</div>
-      <div class="pp-kpi-sub">${vencidas.length} facturas vencidas</div>
+      <div class="pp-kpi-sub">${vencidas.length} facturas</div>
     </div>`;
 
   // Top productos
-  const topProd=kpiData?.top_productos||[];
-  if(topProd.length>0){
-    document.getElementById('pp-prod-body').innerHTML=`<table class="pp-tbl"><thead><tr><th>#</th><th>Producto</th><th>Ganancia</th><th>Margen</th></tr></thead><tbody>${topProd.map(p=>`<tr><td class="pp-pos">${p.pos}</td><td>${p.desc||p.producto||'—'}</td><td class="pp-money">${money(p.ganancia)}</td><td class="pp-pct">${p.margen}%</td></tr>`).join('')}</tbody></table>`;
-  } else {
-    document.getElementById('pp-prod-body').innerHTML='<p style="color:rgba(255,255,255,.35);font-size:13px;padding:12px 0">📤 Cargá el ranking de ganancia desde la pestaña "Cargar datos"</p>';
-  }
+  const topProd=kpiData.top_productos||[];
+  document.getElementById('pp-prod-body').innerHTML=topProd.length>0
+    ?`<table class="pp-tbl"><thead><tr><th>#</th><th>Producto</th><th>Ganancia</th><th>Margen</th></tr></thead><tbody>${topProd.map(p=>`<tr><td class="pp-pos">${p.pos}</td><td>${p.desc||'—'}</td><td class="pp-money">${money(p.ganancia)}</td><td class="pp-pct">${p.margen}%</td></tr>`).join('')}</tbody></table>`
+    :'<p style="color:rgba(255,255,255,.35);font-size:13px;padding:12px 0">📤 Cargá datos para ver el ranking</p>';
 
   // Tendencia
   let tendHTML='';
-  if(ventasSem>0&&ventasAnt>0){
-    const icon=variacion>3?'📈':variacion<-3?'📉':'➡️';
-    const label=variacion>3?'Crecimiento':variacion<-3?'En baja':'Estable';
-    const color=variacion>3?'#4ade80':variacion<-3?'#f87171':'#fbbf24';
-    tendHTML=`<div class="tendencia-card"><div class="tendencia-icon">${icon}</div><div class="tendencia-label" style="color:${color}">${label}</div><div class="tendencia-desc">Variación del ${Math.abs(variacion)}% respecto a la semana anterior. ${variacion>3?'Las ventas están subiendo, buen ritmo.':variacion<-3?'Las ventas bajaron, hay que revisar qué pasó esta semana.':'Las ventas se mantienen estables.'}</div></div>`;
+  if(ventasSem>0&&promBase>0){
+    const icon=variacion>5?'📈':variacion<-5?'📉':'➡️';
+    const label=variacion>5?'Crecimiento':variacion<-5?'En baja':'Estable';
+    const color=variacion>5?'#4ade80':variacion<-5?'#f87171':'#fbbf24';
+    tendHTML=`<div class="tendencia-card"><div class="tendencia-icon">${icon}</div><div class="tendencia-label" style="color:${color}">${label}</div><div class="tendencia-desc">Ventas de la semana: ${money(ventasSem)}<br>Promedio semanal base: ${money(promBase)}<br>Variación: ${variacion>0?'+':''}${variacion}%<br><br>${variacion>5?'Las ventas esta semana superan el promedio. Buen ritmo.':variacion<-5?'Las ventas están por debajo del promedio. Revisá qué pasó.':'Las ventas están en línea con el promedio del año.'}</div></div>`;
+  } else if(tieneBase&&!tieneSemana){
+    tendHTML='<div class="tendencia-card"><div class="tendencia-icon">📤</div><div class="tendencia-label" style="color:#fbbf24">Falta la semana actual</div><div class="tendencia-desc">Ya tenés la base del año cargada. Subí los datos de esta semana para ver la tendencia.</div></div>';
   } else {
-    tendHTML='<p style="color:rgba(255,255,255,.35);font-size:13px">Necesitás al menos 2 semanas de datos para ver la tendencia.</p>';
+    tendHTML='<div class="tendencia-card"><div class="tendencia-icon">📋</div><div class="tendencia-label" style="color:rgba(255,255,255,.4)">Sin datos suficientes</div><div class="tendencia-desc">Cargá la base del año y los datos semanales para ver la tendencia.</div></div>';
   }
   document.getElementById('pp-tendencia').innerHTML=tendHTML;
 
-  // Deuda proveedores resumen
-  const byProv={};
-  activas.forEach(c=>{const n=c.proveedor||'?';if(!byProv[n])byProv[n]=0;byProv[n]+=getSaldo(c)});
+  // Deuda proveedores
+  const byProv={};activas.forEach(c=>{const n=c.proveedor||'?';if(!byProv[n])byProv[n]=0;byProv[n]+=getSaldo(c)});
   const provList=Object.entries(byProv).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  if(provList.length>0){
-    document.getElementById('pp-deuda').innerHTML=provList.map(([n,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px"><span style="color:rgba(255,255,255,.7)">${n}</span><span class="pp-money" style="color:#f87171">${money(v)}</span></div>`).join('');
-  } else {
-    document.getElementById('pp-deuda').innerHTML='<p style="color:rgba(255,255,255,.35);font-size:13px">Sin deuda activa ✓</p>';
-  }
+  document.getElementById('pp-deuda').innerHTML=provList.length>0
+    ?provList.map(([n,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px"><span style="color:rgba(255,255,255,.7)">${n}</span><span class="pp-money" style="color:#f87171">${money(v)}</span></div>`).join('')
+    :'<p style="color:rgba(255,255,255,.35);font-size:13px">Sin deuda activa ✓</p>';
 
-  // Responsive: stack columns on mobile
-  const cols=document.getElementById('pp-cols');
-  if(window.innerWidth<700)cols.style.gridTemplateColumns='1fr';
+  if(window.innerWidth<700)document.getElementById('pp-cols').style.gridTemplateColumns='1fr';
 }
 
 // ═══ UPLOAD FILES ═══
-function uploadFile(input, tipo) {
-  const file = input.files[0]; if (!file) return;
-  const stId = 'st-' + {ranking_ganancia:'ganc',ventas:'vtas',clientes:'cli'}[tipo];
-  const stEl = document.getElementById(stId);
-  if(stEl) stEl.innerHTML = '<span style="color:#fbbf24">⏳ Procesando...</span>';
+function parseExcel(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        let hRow=0;
+        for(let i=0;i<raw.length;i++){if(raw[i].filter(v=>v!=='').length>=3){hRow=i;break}}
+        const headers=raw[hRow].map(h=>String(h||'').trim().toLowerCase().replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/[\s\.]+/g,'_').replace(/[^a-z0-9_]/g,'').slice(0,30));
+        const rows=raw.slice(hRow+1).filter(r=>r.some(v=>v!==''&&v!=null)).map(r=>{const o={};headers.forEach((h,i)=>{if(h)o[h]=r[i]!=null?String(r[i]).trim():''});return o});
+        resolve(rows);
+      }catch(ex){reject(ex)}
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function uploadFile(input, tipo, isBase=false) {
+  const file=input.files[0];if(!file)return;
+  const stMap={ranking_ganancia:'ganc',ventas:'vtas',clientes:'cli'};
+  const stEl=document.getElementById('st-'+(isBase?'b-':'')+stMap[tipo]);
+  if(stEl)stEl.innerHTML='<span style="color:#fbbf24">⏳ Procesando...</span>';
   toast('Procesando Excel...');
-
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    try {
-      const wb = XLSX.read(e.target.result, {type:'array'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-
-      let headerRow = 0;
-      for (let i=0; i<rawRows.length; i++) {
-        if (rawRows[i].filter(v=>v!=='').length >= 3) { headerRow=i; break; }
-      }
-
-      const headers = rawRows[headerRow].map(h => String(h||'').trim().toLowerCase()
-        .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u')
-        .replace(/[\s\.]+/g,'_').replace(/[^a-z0-9_]/g,'').slice(0,30));
-
-      const rows = rawRows.slice(headerRow+1)
-        .filter(r => r.some(v => v !== '' && v !== null && v !== undefined))
-        .map(r => { const obj={}; headers.forEach((h,i)=>{if(h)obj[h]=r[i]!==undefined?String(r[i]).trim():''}); return obj; });
-
-      const year = new Date().getFullYear().toString();
-      const label = year + '_sem_' + today();
-
-      const res = await apiPost('/api/upload/' + tipo, { rows, label });
-      if (res?.ok) {
-        if(stEl) stEl.innerHTML = `<span style="color:#4ade80">✓ ${res.filas||rows.length} filas cargadas</span>`;
-        toast(`✓ ${tipo} cargado`, 'ok');
-        loadDashboard();
-      } else {
-        if(stEl) stEl.innerHTML = `<span style="color:#f87171">✗ ${res?.error||'Error'}</span>`;
-        toast(res?.error||'Error','err');
-      }
-    } catch(ex) {
-      if(stEl) stEl.innerHTML = `<span style="color:#f87171">✗ ${ex.message}</span>`;
-      toast('Error: '+ex.message,'err');
+  try{
+    const rows=await parseExcel(file);
+    const path=isBase?`/api/upload/base/${tipo}`:`/api/upload/${tipo}`;
+    const label=(isBase?'base_':'sem_')+new Date().getFullYear()+'_'+today();
+    const res=await apiPost(path,{rows,label});
+    if(res?.ok){
+      if(stEl)stEl.innerHTML=`<span style="color:#4ade80">✓ ${res.filas||rows.length} filas</span>`;
+      toast(`✓ ${tipo} cargado`,'ok');
+      if(isBase)checkBaseComplete();
+      loadDashboard();
+    }else{
+      if(stEl)stEl.innerHTML=`<span style="color:#f87171">✗ ${res?.error||'Error'}</span>`;
+      toast(res?.error||'Error','err');
     }
-  };
-  reader.readAsArrayBuffer(file);
+  }catch(ex){
+    if(stEl)stEl.innerHTML=`<span style="color:#f87171">✗ ${ex.message}</span>`;
+    toast('Error: '+ex.message,'err');
+  }
+}
+
+// Track base upload completion
+let baseUploaded={ranking_ganancia:false,ventas:false,clientes:false};
+function checkBaseComplete(){
+  const all=baseUploaded.ranking_ganancia&&baseUploaded.ventas&&baseUploaded.clientes;
+  if(all){
+    setTimeout(()=>{closeModal('m-base');toast('✓ Base del año cargada completa. ¡Dashboard listo!','ok');loadDashboard()},500);
+  }
+}
+
+function uploadBase(input,tipo){
+  baseUploaded[tipo]=true;
+  uploadFile(input,tipo,true);
 }
 
 // ═══ HELPERS ═══
