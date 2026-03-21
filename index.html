@@ -102,75 +102,73 @@ select.filter{min-width:140px}input.filter{min-width:180px}
 .pin-input:focus{border-color:var(--admin);outline:none;box-shadow:0 0 0 3px rgba(30,41,59,.15)}
 .pin-error{color:var(--red);font-size:13px;margin-top:10px;display:none}
 
-/* ══════════ PABLO PANEL STYLES ══════════ */
-#pablo-panel{display:none;min-height:100vh;background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%)}
-.pp-header{padding:16px 24px;display:flex;align-items:center;gap:16px;border-bottom:1px solid rgba(255,255,255,.08)}
-.pp-header img{height:36px;filter:brightness(0) invert(1);opacity:.9}
-.pp-header h1{font-family:'Outfit',sans-serif;font-size:20px;font-weight:600;color:#fff;flex:1;letter-spacing:-.3px}
-.pp-header .pp-date{color:rgba(255,255,255,.45);font-size:13px;font-family:'JetBrains Mono',monospace}
-.pp-back{padding:8px 16px;border-radius:var(--radius-sm);background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.1);cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .15s}
-.pp-back:hover{background:rgba(255,255,255,.15);color:#fff}
+/* ══════════ PABLO PANEL STYLES — LIGHT MODE ══════════ */
+#pablo-panel{display:none;min-height:100vh;background:#f0f2f5}
+.pp-header{padding:14px 24px;display:flex;align-items:center;gap:16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.pp-header img{height:40px}
+.pp-header h1{font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;color:var(--text);flex:1;letter-spacing:-.3px}
+.pp-header .pp-date{color:var(--text3);font-size:13px;font-family:'JetBrains Mono',monospace}
+.pp-back{padding:8px 16px;border-radius:var(--radius-sm);background:var(--surface2);color:var(--text2);border:1px solid var(--border);cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .15s}
+.pp-back:hover{background:var(--border);color:var(--text)}
 .pp-content{max-width:var(--max-w);margin:0 auto;padding:24px}
 @media(max-width:600px){.pp-content{padding:16px 12px}}
 
-/* Tabs */
-.pp-tabs{display:flex;gap:4px;margin-bottom:24px;background:rgba(255,255,255,.06);border-radius:var(--radius);padding:4px;overflow-x:auto}
-.pp-tab{padding:10px 20px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:rgba(255,255,255,.5);background:transparent;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
-.pp-tab:hover{color:rgba(255,255,255,.8)}
-.pp-tab.active{background:rgba(255,255,255,.12);color:#fff}
+.pp-tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;overflow-x:auto}
+.pp-tab{padding:10px 20px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--text3);background:transparent;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+.pp-tab:hover{color:var(--text2);background:var(--surface2)}
+.pp-tab.active{background:var(--text);color:#fff}
 
-/* KPI Cards */
 .pp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
 @media(max-width:800px){.pp-kpis{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:500px){.pp-kpis{grid-template-columns:1fr}}
-.pp-kpi{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:20px}
-.pp-kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:rgba(255,255,255,.4);margin-bottom:8px}
-.pp-kpi-val{font-family:'Outfit',sans-serif;font-size:28px;font-weight:700;color:#fff}
-.pp-kpi-sub{font-size:12px;color:rgba(255,255,255,.35);margin-top:4px}
-.pp-kpi.up .pp-kpi-val{color:#4ade80}
-.pp-kpi.down .pp-kpi-val{color:#f87171}
-.pp-kpi.warn .pp-kpi-val{color:#fbbf24}
+.pp-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.pp-kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:8px}
+.pp-kpi-val{font-family:'Outfit',sans-serif;font-size:28px;font-weight:700;color:var(--text)}
+.pp-kpi-sub{font-size:12px;color:var(--text3);margin-top:4px}
+.pp-kpi.up .pp-kpi-val{color:var(--green)}
+.pp-kpi.down .pp-kpi-val{color:var(--red)}
+.pp-kpi.warn .pp-kpi-val{color:var(--amber)}
 
-/* Sections */
-.pp-section{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);padding:24px;margin-bottom:20px}
-.pp-section h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.pp-section h2 .pp-h2-sub{font-size:12px;font-weight:500;color:rgba(255,255,255,.35);margin-left:auto}
+.pp-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;box-shadow:var(--shadow)}
+.pp-section h2{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.pp-section h2 .pp-h2-sub{font-size:12px;font-weight:500;color:var(--text3);margin-left:auto}
 
-/* Tables dark */
 .pp-tbl{width:100%;border-collapse:collapse}
-.pp-tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.35);padding:10px 14px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08)}
-.pp-tbl td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:rgba(255,255,255,.85)}
+.pp-tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.pp-tbl td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:14px;color:var(--text)}
 .pp-tbl tr:last-child td{border-bottom:none}
-.pp-tbl tr:hover td{background:rgba(255,255,255,.03)}
-.pp-tbl .pp-pos{font-family:'JetBrains Mono',monospace;font-size:12px;color:rgba(255,255,255,.3)}
-.pp-tbl .pp-money{font-family:'JetBrains Mono',monospace;font-weight:600;color:#4ade80}
-.pp-tbl .pp-pct{font-family:'JetBrains Mono',monospace;font-size:13px;color:rgba(255,255,255,.5)}
+.pp-tbl tr:hover td{background:var(--surface2)}
+.pp-tbl tr{cursor:pointer}
+.pp-tbl .pp-pos{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3)}
+.pp-tbl .pp-money{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--green)}
+.pp-tbl .pp-pct{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--blue)}
+.pp-tbl-scroll{max-height:600px;overflow-y:auto}
 
-/* Tendencia */
-.tendencia-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:24px;text-align:center}
+.tendencia-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;text-align:center}
 .tendencia-icon{font-size:48px;margin-bottom:8px}
-.tendencia-label{font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;color:#fff}
-.tendencia-desc{color:rgba(255,255,255,.5);font-size:14px;margin-top:8px;line-height:1.6;max-width:600px;margin-left:auto;margin-right:auto}
+.tendencia-label{font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;color:var(--text)}
+.tendencia-desc{color:var(--text2);font-size:14px;margin-top:8px;line-height:1.6;max-width:600px;margin-left:auto;margin-right:auto}
 
-/* Reporte */
-.reporte-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);padding:24px}
-.reporte-text{color:rgba(255,255,255,.75);font-size:14px;line-height:1.8;white-space:pre-wrap}
-.reporte-date{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:12px;font-family:'JetBrains Mono',monospace}
-.reporte-empty{text-align:center;padding:40px;color:rgba(255,255,255,.3)}
+.reporte-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+.reporte-text{color:var(--text);font-size:14px;line-height:1.8;white-space:pre-wrap}
+.reporte-date{font-size:12px;color:var(--text3);margin-bottom:12px;font-family:'JetBrains Mono',monospace}
+.reporte-empty{text-align:center;padding:40px;color:var(--text3)}
 
-/* Upload zone */
 .pp-upload{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 @media(max-width:600px){.pp-upload{grid-template-columns:1fr}}
-.up-zone{background:rgba(255,255,255,.04);border:2px dashed rgba(255,255,255,.12);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:all .2s}
-.up-zone:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.07)}
+.up-zone{background:var(--surface2);border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:all .2s}
+.up-zone:hover{border-color:var(--blue);background:var(--blue-bg)}
 .up-zone .up-icon{font-size:28px;margin-bottom:8px}
-.up-zone .up-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
-.up-zone .up-desc{font-size:11px;color:rgba(255,255,255,.35)}
+.up-zone .up-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.up-zone .up-desc{font-size:11px;color:var(--text3)}
 .up-zone .up-status{font-size:11px;margin-top:8px}
 .up-zone input[type=file]{display:none}
 
-/* pp-view toggling */
 .pp-view{display:none}.pp-view.active{display:block}
+
+/* Product detail popup */
+.pp-prod-detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:12px;box-shadow:var(--shadow-lg)}
+.pp-prod-detail h3{font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;margin-bottom:10px}
 
 /* Toast & loading (shared) */
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:all .3s;pointer-events:none}
@@ -239,7 +237,11 @@ select.filter{min-width:140px}input.filter{min-width:180px}
   <div class="pp-view active" id="ppv-dashboard">
     <div class="pp-kpis" id="pp-kpis"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px" id="pp-cols">
-      <div class="pp-section" id="pp-top-prod"><h2>🏆 Top 10 Productos <span class="pp-h2-sub">por ganancia</span></h2><div id="pp-prod-body"></div></div>
+      <div class="pp-section" id="pp-top-prod">
+        <h2>🏆 Top 20 Productos <span class="pp-h2-sub">por margen</span></h2>
+        <div class="pp-tbl-scroll" id="pp-prod-body"></div>
+        <div id="pp-prod-detail"></div>
+      </div>
       <div>
         <div class="pp-section" id="pp-tendencia-sec"><h2>📈 Tendencia del negocio</h2><div id="pp-tendencia"></div></div>
         <div class="pp-section" style="margin-top:20px"><h2>💳 Deuda proveedores</h2><div id="pp-deuda"></div></div>
@@ -259,7 +261,7 @@ select.filter{min-width:140px}input.filter{min-width:180px}
   <div class="pp-view" id="ppv-datos">
     <div class="pp-section">
       <h2>📤 Carga semanal de datos</h2>
-      <p style="color:rgba(255,255,255,.45);font-size:13px;margin-bottom:18px">Subí los 3 archivos Excel de la semana. La IA actualiza todo automáticamente.</p>
+      <p style="color:var(--text3);font-size:13px;margin-bottom:18px">Subí los 3 archivos Excel de la semana. La IA actualiza todo automáticamente.</p>
       <div class="pp-upload">
         <div class="up-zone" onclick="document.getElementById('up-ganc').click()">
           <div class="up-icon">📊</div>
@@ -322,27 +324,27 @@ select.filter{min-width:140px}input.filter{min-width:180px}
 <div class="modal-footer"><button class="btn" onclick="closeModal('m-detalle')">Cerrar</button><button class="btn" onclick="genPDF()">📄 Resumen PDF</button></div>
 </div></div>
 
-<div class="overlay" id="m-base"><div class="modal" style="max-width:600px;background:#1e293b;color:#fff;border:1px solid rgba(255,255,255,.1)">
-<h2 style="color:#fff;border-color:rgba(255,255,255,.1)">📋 Base del año ${new Date().getFullYear()}</h2>
-<p style="color:rgba(255,255,255,.55);font-size:14px;margin-bottom:20px;line-height:1.6">Es la primera vez que entrás este año. Cargá los <strong style="color:#fff">3 archivos acumulados</strong> (desde enero hasta la semana ante-pasada). Esto le da al sistema la base para comparar tus semanas.</p>
+<div class="overlay" id="m-base"><div class="modal" style="max-width:600px">
+<h2>📋 Base del año — primera carga</h2>
+<p style="color:var(--text2);font-size:14px;margin-bottom:20px;line-height:1.6">Es la primera vez que entrás este año. Cargá los <strong>3 archivos acumulados</strong> (desde enero hasta la semana ante-pasada). Esto le da al sistema la base para comparar.</p>
 <div class="pp-upload" style="margin-bottom:16px">
-  <div class="up-zone" onclick="document.getElementById('up-b-ganc').click()" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12)">
-    <div class="up-icon">📊</div><div class="up-title">Ranking Ganancia</div><div class="up-desc" style="color:rgba(255,255,255,.35)">Acumulado del año</div>
+  <div class="up-zone" onclick="document.getElementById('up-b-ganc').click()">
+    <div class="up-icon">📊</div><div class="up-title">Ranking Ganancia</div><div class="up-desc">Acumulado del año</div>
     <div class="up-status" id="st-b-ganc"></div>
     <input type="file" id="up-b-ganc" accept=".xlsx,.xls,.csv" onchange="uploadBase(this,'ranking_ganancia')">
   </div>
-  <div class="up-zone" onclick="document.getElementById('up-b-vtas').click()" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12)">
-    <div class="up-icon">💰</div><div class="up-title">Ventas</div><div class="up-desc" style="color:rgba(255,255,255,.35)">Acumulado del año</div>
+  <div class="up-zone" onclick="document.getElementById('up-b-vtas').click()">
+    <div class="up-icon">💰</div><div class="up-title">Ventas</div><div class="up-desc">Acumulado del año</div>
     <div class="up-status" id="st-b-vtas"></div>
     <input type="file" id="up-b-vtas" accept=".xlsx,.xls,.csv" onchange="uploadBase(this,'ventas')">
   </div>
-  <div class="up-zone" onclick="document.getElementById('up-b-cli').click()" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12)">
-    <div class="up-icon">👥</div><div class="up-title">Clientes</div><div class="up-desc" style="color:rgba(255,255,255,.35)">Acumulado del año</div>
+  <div class="up-zone" onclick="document.getElementById('up-b-cli').click()">
+    <div class="up-icon">👥</div><div class="up-title">Clientes</div><div class="up-desc">Acumulado del año</div>
     <div class="up-status" id="st-b-cli"></div>
     <input type="file" id="up-b-cli" accept=".xlsx,.xls,.csv" onchange="uploadBase(this,'clientes')">
   </div>
 </div>
-<div style="text-align:right"><button class="pp-back" onclick="closeModal('m-base')" style="font-size:13px">Omitir por ahora →</button></div>
+<div style="text-align:right"><button class="btn" onclick="closeModal('m-base')">Omitir por ahora →</button></div>
 </div></div>
 
 <div class="overlay" id="m-pin"><div class="modal" style="max-width:360px"><h2 style="text-align:center">🔒 Administración</h2>
@@ -442,13 +444,9 @@ function checkPin(){const v=document.getElementById('pin-input').value;if(v===PI
 async function enterAdmin(){
   document.getElementById('laura-module').style.display='none';
   document.getElementById('pablo-panel').style.display='block';
-  document.body.style.background='#0f172a';
   document.getElementById('pp-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  // Check if base data exists
   const kpi=await apiGet('/api/kpis');
-  if(kpi&&!kpi.estado?.tiene_base){
-    openModal('m-base');
-  }
+  if(kpi&&!kpi.estado?.tiene_base)openModal('m-base');
   loadDashboard(kpi);
 }
 
@@ -456,7 +454,6 @@ function exitAdmin(){
   adminMode=false;
   document.getElementById('pablo-panel').style.display='none';
   document.getElementById('laura-module').style.display='block';
-  document.body.style.background='var(--bg)';
   render();
 }
 
@@ -508,11 +505,15 @@ async function loadDashboard(kpiData){
       <div class="pp-kpi-sub">${vencidas.length} facturas</div>
     </div>`;
 
-  // Top productos
-  const topProd=kpiData.top_productos||[];
+  // Top productos — sorted by margin, top 20, clickable
+  let topProd=(kpiData.top_productos||[]).slice();
+  topProd.sort((a,b)=>(b.margen||0)-(a.margen||0));
+  topProd=topProd.slice(0,20);
+  window._topProd=topProd;
+  document.getElementById('pp-prod-detail').innerHTML='';
   document.getElementById('pp-prod-body').innerHTML=topProd.length>0
-    ?`<table class="pp-tbl"><thead><tr><th>#</th><th>Producto</th><th>Ganancia</th><th>Margen</th></tr></thead><tbody>${topProd.map(p=>`<tr><td class="pp-pos">${p.pos}</td><td>${p.desc||'—'}</td><td class="pp-money">${money(p.ganancia)}</td><td class="pp-pct">${p.margen}%</td></tr>`).join('')}</tbody></table>`
-    :'<p style="color:rgba(255,255,255,.35);font-size:13px;padding:12px 0">📤 Cargá datos para ver el ranking</p>';
+    ?`<table class="pp-tbl"><thead><tr><th>#</th><th>Producto</th><th>Margen</th><th>Ganancia</th><th>Ventas</th></tr></thead><tbody>${topProd.map((p,i)=>`<tr onclick="showProdDetail(${i})"><td class="pp-pos">${i+1}</td><td style="font-weight:600">${p.desc||'—'}</td><td class="pp-pct">${p.margen}%</td><td class="pp-money">${money(p.ganancia)}</td><td style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2)">${money(p.ventas||0)}</td></tr>`).join('')}</tbody></table>`
+    :'<p style="color:var(--text3);font-size:13px;padding:12px 0">📤 Cargá datos para ver el ranking</p>';
 
   // Tendencia
   let tendHTML='';
@@ -522,9 +523,9 @@ async function loadDashboard(kpiData){
     const color=variacion>5?'#4ade80':variacion<-5?'#f87171':'#fbbf24';
     tendHTML=`<div class="tendencia-card"><div class="tendencia-icon">${icon}</div><div class="tendencia-label" style="color:${color}">${label}</div><div class="tendencia-desc">Ventas de la semana: ${money(ventasSem)}<br>Promedio semanal base: ${money(promBase)}<br>Variación: ${variacion>0?'+':''}${variacion}%<br><br>${variacion>5?'Las ventas esta semana superan el promedio. Buen ritmo.':variacion<-5?'Las ventas están por debajo del promedio. Revisá qué pasó.':'Las ventas están en línea con el promedio del año.'}</div></div>`;
   } else if(tieneBase&&!tieneSemana){
-    tendHTML='<div class="tendencia-card"><div class="tendencia-icon">📤</div><div class="tendencia-label" style="color:#fbbf24">Falta la semana actual</div><div class="tendencia-desc">Ya tenés la base del año cargada. Subí los datos de esta semana para ver la tendencia.</div></div>';
+    tendHTML='<div class="tendencia-card"><div class="tendencia-icon">📤</div><div class="tendencia-label" style="color:var(--amber)">Falta la semana actual</div><div class="tendencia-desc">Ya tenés la base del año cargada. Subí los datos de esta semana para ver la tendencia.</div></div>';
   } else {
-    tendHTML='<div class="tendencia-card"><div class="tendencia-icon">📋</div><div class="tendencia-label" style="color:rgba(255,255,255,.4)">Sin datos suficientes</div><div class="tendencia-desc">Cargá la base del año y los datos semanales para ver la tendencia.</div></div>';
+    tendHTML='<div class="tendencia-card"><div class="tendencia-icon">📋</div><div class="tendencia-label" style="color:var(--text3)">Sin datos suficientes</div><div class="tendencia-desc">Cargá la base del año y los datos semanales para ver la tendencia.</div></div>';
   }
   document.getElementById('pp-tendencia').innerHTML=tendHTML;
 
@@ -532,8 +533,8 @@ async function loadDashboard(kpiData){
   const byProv={};activas.forEach(c=>{const n=c.proveedor||'?';if(!byProv[n])byProv[n]=0;byProv[n]+=getSaldo(c)});
   const provList=Object.entries(byProv).sort((a,b)=>b[1]-a[1]).slice(0,5);
   document.getElementById('pp-deuda').innerHTML=provList.length>0
-    ?provList.map(([n,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px"><span style="color:rgba(255,255,255,.7)">${n}</span><span class="pp-money" style="color:#f87171">${money(v)}</span></div>`).join('')
-    :'<p style="color:rgba(255,255,255,.35);font-size:13px">Sin deuda activa ✓</p>';
+    ?provList.map(([n,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px"><span style="color:var(--text2)">${n}</span><span class="pp-money" style="color:var(--red)">${money(v)}</span></div>`).join('')
+    :'<p style="color:var(--text3);font-size:13px">Sin deuda activa ✓</p>';
 
   if(window.innerWidth<700)document.getElementById('pp-cols').style.gridTemplateColumns='1fr';
 }
@@ -562,7 +563,7 @@ async function uploadFile(input, tipo, isBase=false) {
   const file=input.files[0];if(!file)return;
   const stMap={ranking_ganancia:'ganc',ventas:'vtas',clientes:'cli'};
   const stEl=document.getElementById('st-'+(isBase?'b-':'')+stMap[tipo]);
-  if(stEl)stEl.innerHTML='<span style="color:#fbbf24">⏳ Procesando...</span>';
+  if(stEl)stEl.innerHTML='<span style="color:var(--amber)">⏳ Procesando...</span>';
   toast('Procesando Excel...');
   try{
     const rows=await parseExcel(file);
@@ -570,16 +571,16 @@ async function uploadFile(input, tipo, isBase=false) {
     const label=(isBase?'base_':'sem_')+new Date().getFullYear()+'_'+today();
     const res=await apiPost(path,{rows,label});
     if(res?.ok){
-      if(stEl)stEl.innerHTML=`<span style="color:#4ade80">✓ ${res.filas||rows.length} filas</span>`;
+      if(stEl)stEl.innerHTML=`<span style="color:var(--green)">✓ ${res.filas||rows.length} filas</span>`;
       toast(`✓ ${tipo} cargado`,'ok');
       if(isBase)checkBaseComplete();
       loadDashboard();
     }else{
-      if(stEl)stEl.innerHTML=`<span style="color:#f87171">✗ ${res?.error||'Error'}</span>`;
+      if(stEl)stEl.innerHTML=`<span style="color:var(--red)">✗ ${res?.error||'Error'}</span>`;
       toast(res?.error||'Error','err');
     }
   }catch(ex){
-    if(stEl)stEl.innerHTML=`<span style="color:#f87171">✗ ${ex.message}</span>`;
+    if(stEl)stEl.innerHTML=`<span style="color:var(--red)">✗ ${ex.message}</span>`;
     toast('Error: '+ex.message,'err');
   }
 }
@@ -596,6 +597,23 @@ function checkBaseComplete(){
 function uploadBase(input,tipo){
   baseUploaded[tipo]=true;
   uploadFile(input,tipo,true);
+}
+
+// ═══ PRODUCT DETAIL ═══
+function showProdDetail(i){
+  const p=window._topProd[i];if(!p)return;
+  const el=document.getElementById('pp-prod-detail');
+  const unidades=p.ventas&&p.costo?(Math.round(p.ventas/p.costo)||'—'):'—';
+  el.innerHTML=`<div class="pp-prod-detail">
+    <h3>${p.desc||'—'}</h3>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px">
+      <div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase">Ventas</div><div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--text)">${money(p.ventas||0)}</div></div>
+      <div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase">Ganancia</div><div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--green)">${money(p.ganancia)}</div></div>
+      <div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase">Margen</div><div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--blue)">${p.margen}%</div></div>
+    </div>
+    ${p.costo?`<div style="font-size:12px;color:var(--text3)">Costo: ${money(p.costo)}</div>`:''}
+    <button class="btn btn-sm" style="margin-top:8px" onclick="document.getElementById('pp-prod-detail').innerHTML=''">Cerrar</button>
+  </div>`;
 }
 
 // ═══ HELPERS ═══
