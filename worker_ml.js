@@ -409,6 +409,84 @@ Basándote en los datos que tenés de Mercado Limpio y el conocimiento estaciona
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// EMAIL — Resend + HTML template
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function sendResend(env, to, subject, html, attachments = []) {
+  const key = env.RESEND_API_KEY;
+  if (!key) throw new Error('RESEND_API_KEY no configurada — ejecutá: wrangler secret put RESEND_API_KEY');
+  const body = {
+    from: 'Administracion <administracion@mercadolimpio.ar>',
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    html,
+  };
+  if (attachments.length > 0) body.attachments = attachments;
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `Resend error ${res.status}`);
+  return data;
+}
+
+function buildProvEmailHTML(nombre, provCompras, fecha) {
+  const m = v => v == null ? '$0' : '$' + Number(v).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+  const dAR = d => { if (!d) return '—'; const [y, mo, dd] = d.split('-'); return `${dd}/${mo}/${y}`; };
+  const saldoC = c => Number(c.monto || 0) - (c.pagos || []).reduce((s, p) => s + Number(p.monto || 0), 0);
+  const estC = c => {
+    if (saldoC(c) <= 0) return 'Pagado';
+    if (!c.vencimiento) return 'Pendiente';
+    return new Date(c.vencimiento + 'T00:00:00') < new Date() ? 'VENCIDO' : 'Pendiente';
+  };
+  const tM = provCompras.reduce((s, c) => s + Number(c.monto || 0), 0);
+  const tP = provCompras.reduce((s, c) => s + (c.pagos || []).reduce((ss, p) => ss + Number(p.monto || 0), 0), 0);
+  const tS = tM - tP;
+  const tV = provCompras.filter(c => estC(c) === 'VENCIDO').reduce((s, c) => s + saldoC(c), 0);
+
+  const th = `style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#666;letter-spacing:.5px;background:#f2f1ee;border-bottom:2px solid #d4d0c8"`;
+  const td = (v, extra = '') => `<td style="padding:8px 14px;border-bottom:1px solid #f0f0f0;font-size:13px${extra}">${v}</td>`;
+  const rows = provCompras.map(c => {
+    const s = saldoC(c), e = estC(c), p = (c.pagos || []).reduce((ss, pg) => ss + Number(pg.monto || 0), 0);
+    const bg = e === 'VENCIDO' ? 'background:#fef2f2' : '';
+    const ec = e === 'VENCIDO' ? '#dc2626' : e === 'Pagado' ? '#16a34a' : '#d97706';
+    return `<tr style="${bg}">${td(dAR(c.fecha))}${td(c.factura || '—', ';color:#888')}${td(dAR(c.vencimiento))}${td(m(c.monto), ';text-align:right;font-family:monospace')}${td(m(p), `;text-align:right;font-family:monospace;color:#16a34a`)}${td(m(s), `;text-align:right;font-family:monospace;font-weight:700;color:${s > 0 ? '#dc2626' : '#16a34a'}`)}${td(`<span style="font-weight:700;color:${ec}">${e}</span>`, ';text-align:center')}</tr>`;
+  }).join('');
+
+  const kpiCard = (label, value, border, bg, color) =>
+    `<td style="padding:0 6px"><div style="text-align:center;padding:14px;border:1px solid ${border};border-radius:8px;background:${bg}"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:${color};letter-spacing:.5px;margin-bottom:5px">${label}</div><div style="font-size:17px;font-weight:700;font-family:monospace;color:${color}">${value}</div></div></td>`;
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:20px;background:#f5f5f3;font-family:'Segoe UI',Arial,sans-serif">
+<div style="max-width:680px;margin:0 auto;background:white;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)">
+  <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:28px 32px">
+    <div style="font-size:22px;font-weight:800;color:white;letter-spacing:-.5px">Mercado Limpio</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:4px">Estado de cuenta — ${nombre}</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:3px">Al ${fecha} · ${provCompras.length} registro${provCompras.length !== 1 ? 's' : ''}</div>
+  </div>
+  <div style="padding:20px 26px;background:#fafaf8;border-bottom:1px solid #eee">
+    <table style="width:100%;border-collapse:collapse"><tr>
+      ${kpiCard('Total comprado', m(tM), '#e5e5e5', '#fff', '#1a1a1a')}
+      ${kpiCard('Total pagado', m(tP), '#bbf7d0', '#f0fdf4', '#16a34a')}
+      ${kpiCard('Saldo pendiente', m(tS), tS > 0 ? '#fde68a' : '#bbf7d0', tS > 0 ? '#fffbeb' : '#f0fdf4', tS > 0 ? '#d97706' : '#16a34a')}
+      ${tV > 0 ? kpiCard('⚠ Vencido', m(tV), '#fecaca', '#fef2f2', '#dc2626') : ''}
+    </tr></table>
+  </div>
+  <table style="width:100%;border-collapse:collapse">
+    <thead><tr><th ${th}>Fecha</th><th ${th}>Factura</th><th ${th}>Vencimiento</th><th ${th} style="text-align:right">Total</th><th ${th} style="text-align:right">Pagado</th><th ${th} style="text-align:right">Saldo</th><th ${th} style="text-align:center">Estado</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div style="padding:18px 32px;background:#f9f9f7;border-top:1px solid #eee;font-size:11px;color:#aaa;text-align:center">
+    Generado el ${new Date().toLocaleString('es-AR')} — Mercado Limpio Distribuidora<br>
+    <a href="mailto:administracion@mercadolimpio.ar" style="color:#16a34a;text-decoration:none">administracion@mercadolimpio.ar</a>
+  </div>
+</div>
+</body></html>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // ROUTER
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -553,6 +631,30 @@ export default {
         else if (d <= 7) alertas.push({ gravedad: 'importante', titulo: `Vence ${d}d: ${c.proveedor}`, desc: `$${saldo.toLocaleString('es-AR')}` });
       });
       return json(alertas.slice(0, 10));
+    }
+
+    // ═══ EMAIL CUENTA PROVEEDOR ═══
+    if (path === '/api/email/proveedor' && request.method === 'POST') {
+      if (!checkAuth(request, env, 'any')) return json({ error: 'No autorizado' }, 401);
+      try {
+        const { nombre, to, pdf_base64 } = await request.json();
+        if (!nombre || !to) return json({ error: 'Faltan parámetros: nombre y to' }, 400);
+        const compras = await kv(env, 'ml:compras', []);
+        const provCompras = compras.filter(c => c.proveedor === nombre).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+        const fecha = new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+        const html = buildProvEmailHTML(nombre, provCompras, fecha);
+        const attachments = [];
+        if (pdf_base64) {
+          attachments.push({
+            filename: `Estado_cuenta_${nombre.replace(/\s+/g, '_')}_${isoDate()}.pdf`,
+            content: pdf_base64,
+          });
+        }
+        await sendResend(env, to, `Estado de cuenta — ${nombre} al ${fecha}`, html, attachments);
+        return json({ ok: true });
+      } catch (e) {
+        return json({ error: e.message }, 500);
+      }
     }
 
     return json({ error: 'Not found', path }, 404);

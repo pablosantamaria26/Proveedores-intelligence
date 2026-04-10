@@ -306,6 +306,25 @@ select.fi{min-width:140px}input.fi{min-width:180px}
 <div class="mf"><button class="btn" onclick="cm('m-edit')">Cancelar</button><button class="btn btn-p" onclick="saveEdit()">Guardar</button></div>
 </div></div>
 
+<div class="overlay" id="m-prov-cuenta"><div class="modal" style="max-width:820px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+  <div><h2 id="pc-title" style="margin:0;border:none;padding:0"></h2><p id="pc-sub" style="color:var(--text3);font-size:13px;margin-top:4px"></p></div>
+</div>
+<div id="pc-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px"></div>
+<div id="pc-body" style="max-height:380px;overflow-y:auto"></div>
+<div id="pc-email-panel" style="display:none;margin-top:14px;padding:14px;background:var(--surface2);border-radius:var(--rs);border:1px solid var(--border)">
+  <label style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:8px">Email del proveedor</label>
+  <div style="display:flex;gap:8px"><input type="email" id="pc-email-to" placeholder="proveedor@email.com" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:14px"><button class="btn btn-p" onclick="sendProvEmail()">Enviar</button><button class="btn" onclick="$('pc-email-panel').style.display='none'">✕</button></div>
+</div>
+<div class="mf" style="flex-wrap:wrap;gap:8px">
+  <button class="btn" onclick="cm('m-prov-cuenta')">Cerrar</button>
+  <div style="flex:1"></div>
+  <button class="btn" onclick="printProvCuenta()">🖨️ Imprimir A4</button>
+  <button class="btn" style="background:#25D366;color:#fff;border-color:#25D366" onclick="waProvCuenta()">💬 WhatsApp</button>
+  <button class="btn btn-p" onclick="emailProvCuenta()">📧 Email</button>
+</div>
+</div></div>
+
 <div class="overlay" id="m-base"><div class="modal" style="max-width:600px">
 <h2>📋 Base del año — primera carga</h2>
 <p style="color:var(--text2);font-size:14px;margin-bottom:20px;line-height:1.6">Cargá los <strong>3 archivos acumulados</strong> del año (enero hasta hace ~2 semanas). Esto le da a la IA la base para comparar.</p>
@@ -377,7 +396,7 @@ function render(){
   const tb=$('tb'),emp=$('emp');
   if(!list.length){tb.innerHTML='';emp.style.display='block';return}
   emp.style.display='none';
-  tb.innerHTML=list.map(c=>{const e=estado(c),s=saldo(c);return`<tr${e==='vencido'?' class="ven"':''}><td><span class="pn" onclick="openDet('${c.id}')">${c.proveedor||'—'}</span></td><td class="dt hm">${c.factura||'—'}</td><td class="dt">${dateAR(c.fecha)}</td><td class="dt">${dateAR(c.vencimiento)}</td><td class="mn">${money(c.monto)}</td><td class="mn" style="color:${s>0?'var(--red)':'var(--green)'}">${money(s)}</td><td>${bdg(c)}</td><td style="white-space:nowrap">${e!=='pagado'?`<button class="btn btn-p btn-sm" onclick="openPago('${c.id}')">Pagar</button> `:''}<button class="btn btn-sm" onclick="openDet('${c.id}')">📋</button></td></tr>`}).join('');
+  tb.innerHTML=list.map(c=>{const e=estado(c),s=saldo(c);return`<tr${e==='vencido'?' class="ven"':''}><td><span class="pn" onclick="openProvCuenta(decodeURIComponent('${encodeURIComponent(c.proveedor||'')}'))">${c.proveedor||'—'}</span></td><td class="dt hm">${c.factura||'—'}</td><td class="dt">${dateAR(c.fecha)}</td><td class="dt">${dateAR(c.vencimiento)}</td><td class="mn">${money(c.monto)}</td><td class="mn" style="color:${s>0?'var(--red)':'var(--green)'}">${money(s)}</td><td>${bdg(c)}</td><td style="white-space:nowrap">${e!=='pagado'?`<button class="btn btn-p btn-sm" onclick="openPago('${c.id}')">Pagar</button> `:''}<button class="btn btn-sm" onclick="openDet('${c.id}')">📋</button></td></tr>`}).join('');
 }
 
 // ═══ COMPRA / PROV / PAGO ═══
@@ -385,10 +404,64 @@ function openNewCompra(){$('nc-monto').value='';$('nc-fecha').value=hoy();const 
 async function saveCompra(){const p=$('nc-prov').value,m=$('nc-monto').value,f=$('nc-fecha').value,v=$('nc-venc').value;if(!p||!m||!f||!v){toast('Completá todos los campos','err');return}const r=await apiP('/api/compras',{proveedor:p,monto:Number(m),fecha:f,vencimiento:v,factura:$('nc-fact').value,observaciones:$('nc-obs').value,pagos:[]});if(r?.ok){compras.push(r.compra);cm('m-compra');toast('✓ Compra registrada','ok');popFilters();render()}else toast(r?.error||'Error','err')}
 function openNewProv(){$('np-nom').value='';om('m-prov')}
 async function saveProv(){const n=$('np-nom').value.trim();if(!n){toast('Escribí el nombre','err');return}const r=await apiP('/api/proveedores',{nombre:n});if(r?.ok){proveedores.push(r.proveedor||{nombre:n});popProvSel();$('nc-prov').value=n;cm('m-prov');toast('✓ Proveedor agregado','ok')}else toast(r?.error||'Error','err')}
-function openProvs(){const list=$('provs-list');if(!proveedores.length){list.innerHTML='<p style="color:var(--text3);padding:10px 0">No hay proveedores cargados</p>';om('m-provs');return}list.innerHTML=proveedores.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:15px">${p.nombre}</span><button class="btn btn-sm" style="color:var(--red);border-color:var(--red-border)" onclick="deleteProv('${p.nombre.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">🗑️ Eliminar</button></div>`).join('');om('m-provs')}
+function openProvs(){const list=$('provs-list');if(!proveedores.length){list.innerHTML='<p style="color:var(--text3);padding:10px 0">No hay proveedores cargados</p>';om('m-provs');return}list.innerHTML=proveedores.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:8px"><span style="font-size:15px;flex:1">${p.nombre}</span><button class="btn btn-sm" onclick="cm('m-provs');openProvCuenta(decodeURIComponent('${encodeURIComponent(p.nombre)}'))">📊 Cuenta</button><button class="btn btn-sm" style="color:var(--red);border-color:var(--red-border)" onclick="deleteProv('${p.nombre.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">🗑️ Eliminar</button></div>`).join('');om('m-provs')}
 async function deleteProv(nombre){if(!confirm(`¿Eliminar "${nombre}"?\nNo se puede deshacer.`))return;const r=await apiDel('/api/proveedores/'+encodeURIComponent(nombre));if(r?.ok){proveedores=proveedores.filter(p=>p.nombre!==nombre);popProvSel();openProvs();toast('✓ Proveedor eliminado','ok')}else toast(r?.error||'Error al eliminar','err')}
 function openEdit(id){const c=compras.find(x=>x.id===id);if(!c)return;$('edit-id').value=id;$('edit-monto').value=c.monto;$('edit-venc').value=c.vencimiento||'';$('edit-obs').value=c.observaciones||'';om('m-edit')}
 async function saveEdit(){const id=$('edit-id').value,m=$('edit-monto').value,v=$('edit-venc').value,obs=$('edit-obs').value;if(!m){toast('Ingresá el monto','err');return}const r=await apiPut('/api/compras/'+id,{monto:Number(m),vencimiento:v,observaciones:obs});if(r?.ok){const i=compras.findIndex(c=>c.id===id);if(i>=0){compras[i].monto=Number(m);if(v)compras[i].vencimiento=v;compras[i].observaciones=obs;}cm('m-edit');cm('m-det');toast('✓ Compra actualizada','ok');render()}else toast(r?.error||'Error al actualizar','err')}
+
+// ═══ CUENTA POR PROVEEDOR ═══
+let curProvCuenta=null;
+function openProvCuenta(nombre){
+  curProvCuenta=nombre;
+  const pc=compras.filter(c=>c.proveedor===nombre).sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+  $('pc-title').textContent=nombre;
+  $('pc-sub').textContent=pc.length+' registro'+(pc.length!==1?'s':'');
+  $('pc-email-panel').style.display='none';
+  const tM=pc.reduce((s,c)=>s+Number(c.monto||0),0);
+  const tP=pc.reduce((s,c)=>s+(c.pagos||[]).reduce((ss,p)=>ss+Number(p.monto||0),0),0);
+  const tS=tM-tP;
+  const tV=pc.filter(c=>estado(c)==='vencido').reduce((s,c)=>s+saldo(c),0);
+  $('pc-kpis').innerHTML=`<div class="tc"><div class="tc-l">Total comprado</div><div class="tc-v" style="font-size:22px">${money(tM)}</div><div class="tc-s">${pc.length} compras</div></div><div class="tc green"><div class="tc-l">Pagado</div><div class="tc-v" style="font-size:22px">${money(tP)}</div></div><div class="tc${tS>0?' amber':' green'}"><div class="tc-l">Saldo pendiente</div><div class="tc-v" style="font-size:22px">${money(tS)}</div></div><div class="tc${tV>0?' red':''}"><div class="tc-l">Vencido</div><div class="tc-v" style="font-size:22px">${money(tV)}</div></div>`;
+  $('pc-body').innerHTML=pc.length?`<table class="tbl"><thead><tr><th>Fecha ingreso</th><th>Factura</th><th>Vencimiento</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th></tr></thead><tbody>${pc.map(c=>{const s=saldo(c),e=estado(c),p=(c.pagos||[]).reduce((ss,pg)=>ss+Number(pg.monto||0),0);return`<tr${e==='vencido'?' class="ven"':''}><td class="dt">${dateAR(c.fecha)}</td><td class="dt">${c.factura||'—'}</td><td class="dt">${dateAR(c.vencimiento)}</td><td class="mn">${money(c.monto)}</td><td class="mn" style="color:var(--green)">${money(p)}</td><td class="mn" style="color:${s>0?'var(--red)':'var(--green)'}">${money(s)}</td><td>${bdg(c)}</td></tr>`}).join('')}</tbody></table>`:'<p style="color:var(--text3);padding:20px 0">No hay compras registradas</p>';
+  om('m-prov-cuenta');
+}
+function emailProvCuenta(){const panel=$('pc-email-panel');panel.style.display=panel.style.display==='none'?'block':'none';if(panel.style.display!=='none')$('pc-email-to').focus()}
+async function sendProvEmail(){
+  const to=$('pc-email-to').value.trim();if(!to){toast('Ingresá un email','err');return}
+  let pdfBase64=null;try{pdfBase64=buildProvPDF()}catch(e){}
+  toast('Enviando email...');
+  const r=await apiP('/api/email/proveedor',{nombre:curProvCuenta,to,pdf_base64:pdfBase64});
+  if(r?.ok){$('pc-email-panel').style.display='none';toast('✓ Email enviado','ok')}else toast(r?.error||'Error al enviar','err')
+}
+function waProvCuenta(){
+  const pc=compras.filter(c=>c.proveedor===curProvCuenta);
+  const tM=pc.reduce((s,c)=>s+Number(c.monto||0),0),tP=pc.reduce((s,c)=>s+(c.pagos||[]).reduce((ss,p)=>ss+Number(p.monto||0),0),0),tS=tM-tP;
+  const pend=pc.filter(c=>estado(c)!=='pagado');
+  let msg=`*Mercado Limpio — Estado de cuenta*\n*Proveedor: ${curProvCuenta}*\nFecha: ${new Date().toLocaleDateString('es-AR')}\n\n📊 *Resumen*\nTotal comprado: ${money(tM)}\nTotal pagado: ${money(tP)}\nSaldo pendiente: *${money(tS)}*\n`;
+  if(pend.length){msg+=`\n📋 *Pendientes (${pend.length})*\n`;pend.forEach(c=>{msg+=`• ${dateAR(c.fecha)}${c.factura?' Fact.'+c.factura:''} → Saldo: ${money(saldo(c))}${estado(c)==='vencido'?' ⚠️ VENCIDO':''}\n`})}
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+function buildProvPDF(){
+  const {jsPDF}=window.jspdf;const doc=new jsPDF();
+  const pc=compras.filter(c=>c.proveedor===curProvCuenta).sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+  const tM=pc.reduce((s,c)=>s+Number(c.monto||0),0),tP=pc.reduce((s,c)=>s+(c.pagos||[]).reduce((ss,p)=>ss+Number(p.monto||0),0),0),tS=tM-tP;
+  doc.setFillColor(22,163,74);doc.rect(0,0,210,32,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont(undefined,'bold');doc.text('Mercado Limpio',14,13);
+  doc.setFontSize(11);doc.setFont(undefined,'normal');doc.text('Estado de cuenta — '+curProvCuenta,14,21);
+  doc.setFontSize(9);doc.text('Al '+new Date().toLocaleDateString('es-AR'),14,28);
+  doc.setTextColor(0);let y=44;
+  [['Total comprado',money(tM)],['Total pagado',money(tP)],['Saldo pendiente',money(tS)]].forEach(([k,v])=>{doc.setFont(undefined,'bold');doc.text(k+':',14,y);doc.setFont(undefined,'normal');doc.text(v,75,y);y+=7});
+  doc.autoTable({startY:y+4,head:[['Fecha','Factura','Vence','Total','Pagado','Saldo','Estado']],body:pc.map(c=>{const s=saldo(c),p=(c.pagos||[]).reduce((ss,pg)=>ss+Number(pg.monto||0),0);return[dateAR(c.fecha),c.factura||'—',dateAR(c.vencimiento),money(c.monto),money(p),money(s),estado(c).toUpperCase()]}),styles:{fontSize:8,cellPadding:3},headStyles:{fillColor:[30,41,59]},columnStyles:{3:{halign:'right'},4:{halign:'right'},5:{halign:'right'}},margin:{left:14,right:14}});
+  return doc.output('datauristring').split(',')[1];
+}
+function printProvCuenta(){
+  const nombre=curProvCuenta;
+  const pc=compras.filter(c=>c.proveedor===nombre).sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+  const tM=pc.reduce((s,c)=>s+Number(c.monto||0),0),tP=pc.reduce((s,c)=>s+(c.pagos||[]).reduce((ss,p)=>ss+Number(p.monto||0),0),0),tS=tM-tP,tV=pc.filter(c=>estado(c)==='vencido').reduce((s,c)=>s+saldo(c),0);
+  const rows=pc.map(c=>{const s=saldo(c),e=estado(c),p=(c.pagos||[]).reduce((ss,pg)=>ss+Number(pg.monto||0),0);return`<tr style="background:${e==='vencido'?'#fef2f2':''}"><td>${dateAR(c.fecha)}</td><td style="color:#666">${c.factura||'—'}</td><td>${dateAR(c.vencimiento)}</td><td style="text-align:right;font-family:monospace">${money(c.monto)}</td><td style="text-align:right;color:#16a34a;font-family:monospace">${money(p)}</td><td style="text-align:right;font-weight:700;color:${s>0?'#dc2626':'#16a34a'};font-family:monospace">${money(s)}</td><td style="text-align:center;font-weight:600;color:${e==='vencido'?'#dc2626':e==='pagado'?'#16a34a':'#d97706'}">${e==='pagado'?'✓ Pagado':e==='vencido'?'⚠ Vencido':'Pendiente'}</td></tr>`}).join('');
+  const h=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Estado de cuenta — ${nombre}</title><style>@page{size:A4;margin:2cm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:11pt;color:#1a1a1a}.hdr{background:#16a34a;color:white;padding:20px 24px;margin-bottom:18px;border-radius:6px}.hdr h1{font-size:18pt;margin-bottom:4px}.hdr p{font-size:10pt;opacity:.9}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}.kp{border:1px solid #e5e5e5;border-radius:6px;padding:10px 12px}.kp-l{font-size:8pt;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:3px}.kp-v{font-size:15pt;font-weight:700;font-family:'Courier New',monospace}.green{border-color:#bbf7d0;background:#f0fdf4}.green .kp-v{color:#16a34a}.amber{border-color:#fde68a;background:#fffbeb}.amber .kp-v{color:#d97706}.red{border-color:#fecaca;background:#fef2f2}.red .kp-v{color:#dc2626}table{width:100%;border-collapse:collapse}th{font-size:8pt;font-weight:700;text-transform:uppercase;color:#555;padding:7px 10px;text-align:left;background:#f2f1ee;border-bottom:2px solid #d4d0c8}td{padding:6px 10px;border-bottom:1px solid #e5e5e5;font-size:10pt}.ft{margin-top:18px;padding-top:10px;border-top:1px solid #e5e5e5;font-size:9pt;color:#aaa;text-align:center}</style></head><body><div class="hdr"><h1>Mercado Limpio — Estado de cuenta</h1><p><strong>${nombre}</strong> &nbsp;·&nbsp; Al ${new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</p></div><div class="kpis"><div class="kp"><div class="kp-l">Total comprado</div><div class="kp-v">${money(tM)}</div></div><div class="kp green"><div class="kp-l">Pagado</div><div class="kp-v">${money(tP)}</div></div><div class="kp${tS>0?' amber':''}"><div class="kp-l">Saldo pendiente</div><div class="kp-v">${money(tS)}</div></div><div class="kp${tV>0?' red':''}"><div class="kp-l">Vencido</div><div class="kp-v">${money(tV)}</div></div></div><table><thead><tr><th>Fecha ingreso</th><th>Factura</th><th>Vencimiento</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table><div class="ft">Generado el ${new Date().toLocaleString('es-AR')} — Mercado Limpio Distribuidora &nbsp;·&nbsp; administracion@mercadolimpio.ar</div></body></html>`;
+  const win=window.open('','_blank');win.document.write(h);win.document.close();setTimeout(()=>{win.focus();win.print()},400);
+}
 function openPago(id){const c=compras.find(x=>x.id===id);if(!c)return;const s=saldo(c);$('pg-id').value=id;$('pg-info').innerHTML=`<strong style="font-size:16px">${c.proveedor}</strong><br>Total: ${money(c.monto)}${c.factura?' · Fact: '+c.factura:''}<br><strong style="color:var(--red);font-size:18px">Saldo: ${money(s)}</strong>`;$('pg-monto').value=s;$('pg-fecha').value=hoy();$('pg-medio').value='';$('pg-obs').value='';document.querySelectorAll('.medio-fields').forEach(el=>el.classList.remove('visible'));document.querySelectorAll('.medio-fields input').forEach(el=>el.value='');om('m-pago')}
 function tgMedio(){const m=$('pg-medio').value;document.querySelectorAll('.medio-fields').forEach(el=>el.classList.remove('visible'));if(m&&m!=='efectivo'){const el=$('mf-'+m);if(el)el.classList.add('visible')}}
 async function savePago(){const id=$('pg-id').value,m=$('pg-monto').value,f=$('pg-fecha').value,medio=$('pg-medio').value;if(!m||!f||!medio){toast('Completá monto, fecha y medio','err');return}const pg={monto:Number(m),fecha:f,medio,observaciones:$('pg-obs').value};if(medio==='transferencia')pg.banco=$('pg-tb').value;else if(medio==='cheque_propio'){pg.cheque_banco=$('pg-cpb').value;pg.cheque_nro=$('pg-cpn').value;pg.cheque_fecha=$('pg-cpf').value}else if(medio==='cheque_terceros'){pg.cheque_banco=$('pg-ctb').value;pg.cheque_nro=$('pg-ctn').value;pg.cheque_librador=$('pg-ctl').value;pg.cheque_fecha=$('pg-ctf').value}const r=await apiP(`/api/compras/${id}/pago`,pg);if(r?.ok){const i=compras.findIndex(c=>c.id===id);if(i>=0){if(!compras[i].pagos)compras[i].pagos=[];compras[i].pagos.push({id:r.pago_id,...pg})}cm('m-pago');toast('✓ Pago registrado','ok');render()}else toast(r?.error||'Error','err')}
