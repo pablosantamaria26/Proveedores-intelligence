@@ -434,7 +434,7 @@ async function sendProvEmail(){
   toast('Enviando email...');
   const html=buildProvEmailHTMLClient(curProvCuenta,pc,fecha);
   const subject=`Estado de cuenta — ${curProvCuenta} al ${fecha}`;
-  const r=await apiP('/api/email/proveedor',{to,subject,html,pdf_base64:pdfBase64});
+  const r=await apiP('/api/email/proveedor',{nombre:curProvCuenta,to,subject,html,pdf_base64:pdfBase64});
   if(r?.ok){$('pc-email-panel').style.display='none';toast('✓ Email enviado','ok')}else toast(r?.error||'Error al enviar','err')
 }
 function buildProvEmailHTMLClient(nombre,pc,fecha){
