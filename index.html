@@ -434,12 +434,32 @@ async function sendProvEmail(){
   if(r?.ok){$('pc-email-panel').style.display='none';toast('✓ Email enviado','ok')}else toast(r?.error||'Error al enviar','err')
 }
 function waProvCuenta(){
-  const pc=compras.filter(c=>c.proveedor===curProvCuenta);
+  const pc=compras.filter(c=>c.proveedor===curProvCuenta).sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
   const tM=pc.reduce((s,c)=>s+Number(c.monto||0),0),tP=pc.reduce((s,c)=>s+(c.pagos||[]).reduce((ss,p)=>ss+Number(p.monto||0),0),0),tS=tM-tP;
-  const pend=pc.filter(c=>estado(c)!=='pagado');
-  let msg=`*Mercado Limpio — Estado de cuenta*\n*Proveedor: ${curProvCuenta}*\nFecha: ${new Date().toLocaleDateString('es-AR')}\n\n📊 *Resumen*\nTotal comprado: ${money(tM)}\nTotal pagado: ${money(tP)}\nSaldo pendiente: *${money(tS)}*\n`;
-  if(pend.length){msg+=`\n📋 *Pendientes (${pend.length})*\n`;pend.forEach(c=>{msg+=`• ${dateAR(c.fecha)}${c.factura?' Fact.'+c.factura:''} → Saldo: ${money(saldo(c))}${estado(c)==='vencido'?' ⚠️ VENCIDO':''}\n`})}
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  const tV=pc.filter(c=>estado(c)==='vencido').reduce((s,c)=>s+saldo(c),0);
+  let msg=`*Mercado Limpio — Estado de cuenta*\n*Proveedor: ${curProvCuenta}*\nFecha: ${new Date().toLocaleDateString('es-AR')}\n\n📊 *Resumen*\nTotal comprado: ${money(tM)}\nTotal pagado: ${money(tP)}\nSaldo pendiente: *${money(tS)}*${tV>0?`\n⚠️ Vencido: *${money(tV)}*`:''}\n\n━━━━━━━━━━━━━━\n📋 *Detalle (${pc.length} compra${pc.length!==1?'s':''})*\n━━━━━━━━━━━━━━`;
+  pc.forEach(c=>{
+    const s=saldo(c),e=estado(c),pagos=c.pagos||[],tp=pagos.reduce((ss,p)=>ss+Number(p.monto||0),0);
+    const icon=e==='pagado'?'✅':e==='vencido'?'🔴':'🟡';
+    msg+=`\n\n${icon} *${c.factura?'Fact. '+c.factura:'Sin Nº factura'} | ${dateAR(c.fecha)}*`;
+    msg+=`\nTotal: ${money(c.monto)} | Vence: ${dateAR(c.vencimiento)}`;
+    msg+=`\nPagado: ${money(tp)} | Saldo: *${money(s)}*${e==='vencido'?' ⚠️ VENCIDO':''}`;
+    if(pagos.length){
+      msg+=`\n💳 *Pagos:*`;
+      pagos.forEach(p=>{
+        let det=medLbl(p.medio).replace(/[^\w\sáéíóúñÁÉÍÓÚÑ.#]/g,'').trim();
+        if(p.banco) det+=' — '+p.banco;
+        if(p.cheque_nro) det+=' Ch#'+p.cheque_nro;
+        if(p.cheque_banco) det+=' ('+p.cheque_banco+')';
+        if(p.cheque_librador) det+=' Lib:'+p.cheque_librador;
+        if(p.cheque_fecha) det+=' Vto:'+dateAR(p.cheque_fecha);
+        if(p.observaciones) det+=' · '+p.observaciones;
+        msg+=`\n   • ${dateAR(p.fecha)} — ${money(p.monto)} — ${det}`;
+      });
+    }else if(e!=='pagado'){msg+=`\n   _(sin pagos registrados)_`}
+  });
+  msg+=`\n\n_administracion@mercadolimpio.ar_`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
 }
 function buildProvPDF(){
   const {jsPDF}=window.jspdf;const doc=new jsPDF();
@@ -451,7 +471,24 @@ function buildProvPDF(){
   doc.setFontSize(9);doc.text('Al '+new Date().toLocaleDateString('es-AR'),14,28);
   doc.setTextColor(0);let y=44;
   [['Total comprado',money(tM)],['Total pagado',money(tP)],['Saldo pendiente',money(tS)]].forEach(([k,v])=>{doc.setFont(undefined,'bold');doc.text(k+':',14,y);doc.setFont(undefined,'normal');doc.text(v,75,y);y+=7});
-  doc.autoTable({startY:y+4,head:[['Fecha','Factura','Vence','Total','Pagado','Saldo','Estado']],body:pc.map(c=>{const s=saldo(c),p=(c.pagos||[]).reduce((ss,pg)=>ss+Number(pg.monto||0),0);return[dateAR(c.fecha),c.factura||'—',dateAR(c.vencimiento),money(c.monto),money(p),money(s),estado(c).toUpperCase()]}),styles:{fontSize:8,cellPadding:3},headStyles:{fillColor:[30,41,59]},columnStyles:{3:{halign:'right'},4:{halign:'right'},5:{halign:'right'}},margin:{left:14,right:14}});
+  const medLblPDF=med=>({efectivo:'Efectivo',transferencia:'Transferencia',cheque_propio:'Cheque propio',cheque_terceros:'Cheque terceros'}[med]||med||'—');
+  const allRows=[],rowTypes=[];
+  pc.forEach(c=>{
+    const s=saldo(c),p=(c.pagos||[]).reduce((ss,pg)=>ss+Number(pg.monto||0),0),e=estado(c);
+    allRows.push([dateAR(c.fecha),c.factura||'—',dateAR(c.vencimiento),money(c.monto),money(p),money(s),e.toUpperCase()]);
+    rowTypes.push({type:'compra',e});
+    (c.pagos||[]).forEach(pg=>{
+      let det=medLblPDF(pg.medio);
+      if(pg.banco) det+=' — '+pg.banco;
+      if(pg.cheque_nro) det+=' Ch#'+pg.cheque_nro;
+      if(pg.cheque_banco) det+=' ('+pg.cheque_banco+')';
+      if(pg.cheque_librador) det+=' Lib:'+pg.cheque_librador;
+      if(pg.cheque_fecha) det+=' Vto:'+dateAR(pg.cheque_fecha);
+      allRows.push(['  ↳ '+dateAR(pg.fecha),det,'','',money(pg.monto),'','']);
+      rowTypes.push({type:'pago'});
+    });
+  });
+  doc.autoTable({startY:y+4,head:[['Fecha','Factura / Forma de pago','Vence','Total','Pagado','Saldo','Estado']],body:allRows,styles:{fontSize:8,cellPadding:3},headStyles:{fillColor:[13,27,46]},columnStyles:{3:{halign:'right'},4:{halign:'right'},5:{halign:'right'}},didParseCell:data=>{const r=rowTypes[data.row.index];if(!r)return;if(r.type==='pago'){data.cell.styles.fillColor=[245,244,241];data.cell.styles.textColor=[110,108,104];data.cell.styles.fontSize=7;data.cell.styles.fontStyle='normal'}else if(r.e==='vencido'&&data.section==='body'){data.cell.styles.fillColor=[254,242,242]}},margin:{left:14,right:14}});
   return doc.output('datauristring').split(',')[1];
 }
 function printProvCuenta(){

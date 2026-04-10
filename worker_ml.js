@@ -436,52 +436,109 @@ function buildProvEmailHTML(nombre, provCompras, fecha) {
   const m = v => v == null ? '$0' : '$' + Number(v).toLocaleString('es-AR', { maximumFractionDigits: 0 });
   const dAR = d => { if (!d) return '—'; const [y, mo, dd] = d.split('-'); return `${dd}/${mo}/${y}`; };
   const saldoC = c => Number(c.monto || 0) - (c.pagos || []).reduce((s, p) => s + Number(p.monto || 0), 0);
+  const medioLbl = med => ({ efectivo: 'Efectivo', transferencia: 'Transferencia', cheque_propio: 'Cheque propio', cheque_terceros: 'Cheque terceros' }[med] || med || '—');
   const estC = c => {
-    if (saldoC(c) <= 0) return 'Pagado';
-    if (!c.vencimiento) return 'Pendiente';
-    return new Date(c.vencimiento + 'T00:00:00') < new Date() ? 'VENCIDO' : 'Pendiente';
+    if (saldoC(c) <= 0) return 'pagado';
+    if (!c.vencimiento) return 'pendiente';
+    return new Date(c.vencimiento + 'T00:00:00') < new Date() ? 'vencido' : 'pendiente';
   };
+
   const tM = provCompras.reduce((s, c) => s + Number(c.monto || 0), 0);
   const tP = provCompras.reduce((s, c) => s + (c.pagos || []).reduce((ss, p) => ss + Number(p.monto || 0), 0), 0);
   const tS = tM - tP;
-  const tV = provCompras.filter(c => estC(c) === 'VENCIDO').reduce((s, c) => s + saldoC(c), 0);
+  const tV = provCompras.filter(c => estC(c) === 'vencido').reduce((s, c) => s + saldoC(c), 0);
 
-  const th = `style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:#666;letter-spacing:.5px;background:#f2f1ee;border-bottom:2px solid #d4d0c8"`;
-  const td = (v, extra = '') => `<td style="padding:8px 14px;border-bottom:1px solid #f0f0f0;font-size:13px${extra}">${v}</td>`;
-  const rows = provCompras.map(c => {
-    const s = saldoC(c), e = estC(c), p = (c.pagos || []).reduce((ss, pg) => ss + Number(pg.monto || 0), 0);
-    const bg = e === 'VENCIDO' ? 'background:#fef2f2' : '';
-    const ec = e === 'VENCIDO' ? '#dc2626' : e === 'Pagado' ? '#16a34a' : '#d97706';
-    return `<tr style="${bg}">${td(dAR(c.fecha))}${td(c.factura || '—', ';color:#888')}${td(dAR(c.vencimiento))}${td(m(c.monto), ';text-align:right;font-family:monospace')}${td(m(p), `;text-align:right;font-family:monospace;color:#16a34a`)}${td(m(s), `;text-align:right;font-family:monospace;font-weight:700;color:${s > 0 ? '#dc2626' : '#16a34a'}`)}${td(`<span style="font-weight:700;color:${ec}">${e}</span>`, ';text-align:center')}</tr>`;
+  const pill = e => {
+    if (e === 'pagado') return `<span style="padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;background:#dcfce7;color:#16a34a">&#10003; PAGADO</span>`;
+    if (e === 'vencido') return `<span style="padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;background:#fee2e2;color:#dc2626">&#9888; VENCIDO</span>`;
+    return `<span style="padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;background:#fef9c3;color:#854d0e">PENDIENTE</span>`;
+  };
+
+  const kpiTd = (label, val, color, bg, border) =>
+    `<td style="padding:0 5px"><div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:12px 8px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${color};margin-bottom:5px">${label}</div><div style="font-size:17px;font-weight:800;color:${color}">${val}</div></div></td>`;
+
+  const compraBlocks = provCompras.map(c => {
+    const s = saldoC(c), e = estC(c);
+    const pagos = c.pagos || [];
+    const tp = pagos.reduce((ss, p) => ss + Number(p.monto || 0), 0);
+    const stripe = e === 'vencido' ? '#dc2626' : e === 'pagado' ? '#16a34a' : '#f59e0b';
+    const bgRow = e === 'vencido' ? '#fff8f8' : 'white';
+
+    const pagoRows = pagos.length
+      ? `<tr><td colspan="3" style="padding:0">
+          <div style="margin-left:4px;background:#f7f6f3">
+            <div style="padding:5px 14px 5px 16px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#999;border-top:1px solid #eae8e4">&#128179; Pagos registrados</div>
+            <table style="width:100%;border-collapse:collapse">
+              ${pagos.map(p => {
+                let det = medioLbl(p.medio);
+                if (p.banco) det += ' — ' + p.banco;
+                if (p.cheque_nro) det += ' &middot; Ch#' + p.cheque_nro;
+                if (p.cheque_banco) det += ' (' + p.cheque_banco + ')';
+                if (p.cheque_librador) det += ' &middot; Lib: ' + p.cheque_librador;
+                if (p.cheque_fecha) det += ' &middot; Vto: ' + dAR(p.cheque_fecha);
+                if (p.observaciones) det += ' &middot; ' + p.observaciones;
+                return `<tr><td style="padding:6px 10px 6px 16px;font-size:11px;color:#666;border-bottom:1px solid #edecea;white-space:nowrap">${dAR(p.fecha)}</td><td style="padding:6px 10px;font-size:11px;font-weight:700;color:#16a34a;text-align:right;border-bottom:1px solid #edecea;white-space:nowrap">${m(p.monto)}</td><td style="padding:6px 14px;font-size:11px;color:#777;border-bottom:1px solid #edecea">${det}</td></tr>`;
+              }).join('')}
+            </table>
+          </div>
+        </td></tr>`
+      : e !== 'pagado'
+      ? `<tr><td colspan="3" style="padding:5px 14px 8px 20px;font-size:11px;color:#c0bdb8;font-style:italic;background:#faf9f6;border-top:1px solid #edecea">Sin pagos registrados aún</td></tr>`
+      : '';
+
+    return `<table style="width:100%;border-collapse:collapse;margin-bottom:10px;border:1px solid #e2e0da">
+      <tr style="background:${bgRow}">
+        <td style="width:4px;padding:0;background:${stripe}"></td>
+        <td style="padding:11px 13px">
+          <div><strong style="font-size:13px;color:#1a1a1a">${c.factura ? 'Factura #' + c.factura : 'Sin N&ordm; factura'}</strong> &nbsp;${pill(e)}</div>
+          <div style="font-size:11px;color:#a0a09a;margin-top:3px">Ingreso: ${dAR(c.fecha)}${c.vencimiento ? ' &nbsp;&middot;&nbsp; Vence: ' + dAR(c.vencimiento) : ''}${c.observaciones ? ' &nbsp;&middot;&nbsp; ' + c.observaciones : ''}</div>
+        </td>
+        <td style="padding:11px 13px;text-align:right;white-space:nowrap;vertical-align:top">
+          <div style="font-size:10px;color:#c0bdb8;margin-bottom:1px">Total &nbsp;/ &nbsp;Pagado</div>
+          <div style="font-size:13px;font-weight:700;color:#2d2d2d">${m(c.monto)} &nbsp;/ &nbsp;<span style="color:#16a34a">${m(tp)}</span></div>
+          <div style="font-size:14px;font-weight:900;color:${s > 0 ? '#dc2626' : '#16a34a'};margin-top:2px">Saldo: ${m(s)}</div>
+        </td>
+      </tr>
+      ${pagoRows}
+    </table>`;
   }).join('');
 
-  const kpiCard = (label, value, border, bg, color) =>
-    `<td style="padding:0 6px"><div style="text-align:center;padding:14px;border:1px solid ${border};border-radius:8px;background:${bg}"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:${color};letter-spacing:.5px;margin-bottom:5px">${label}</div><div style="font-size:17px;font-weight:700;font-family:monospace;color:${color}">${value}</div></div></td>`;
-
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:20px;background:#f5f5f3;font-family:'Segoe UI',Arial,sans-serif">
-<div style="max-width:680px;margin:0 auto;background:white;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)">
-  <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:28px 32px">
-    <div style="font-size:22px;font-weight:800;color:white;letter-spacing:-.5px">Mercado Limpio</div>
-    <div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:4px">Estado de cuenta — ${nombre}</div>
-    <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:3px">Al ${fecha} · ${provCompras.length} registro${provCompras.length !== 1 ? 's' : ''}</div>
-  </div>
-  <div style="padding:20px 26px;background:#fafaf8;border-bottom:1px solid #eee">
+<body style="margin:0;padding:0;background:#e5e2dc;font-family:'Segoe UI',Helvetica,Arial,sans-serif">
+<div style="max-width:660px;margin:0 auto;padding:20px 0 28px">
+
+  <div style="background:linear-gradient(135deg,#0d1b2e 0%,#1a3050 50%,#166534 100%);padding:28px 30px;border-radius:10px 10px 0 0">
+    <div style="font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:10px">Mercado Limpio &middot; Distribuidora</div>
+    <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:-.7px;line-height:1.1">Estado de Cuenta</div>
+    <div style="height:1px;background:rgba(255,255,255,.1);margin:10px 0"></div>
     <table style="width:100%;border-collapse:collapse"><tr>
-      ${kpiCard('Total comprado', m(tM), '#e5e5e5', '#fff', '#1a1a1a')}
-      ${kpiCard('Total pagado', m(tP), '#bbf7d0', '#f0fdf4', '#16a34a')}
-      ${kpiCard('Saldo pendiente', m(tS), tS > 0 ? '#fde68a' : '#bbf7d0', tS > 0 ? '#fffbeb' : '#f0fdf4', tS > 0 ? '#d97706' : '#16a34a')}
-      ${tV > 0 ? kpiCard('⚠ Vencido', m(tV), '#fecaca', '#fef2f2', '#dc2626') : ''}
+      <td><div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.88)">${nombre}</div><div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">Al ${fecha}</div></td>
+      <td style="text-align:right;vertical-align:middle"><div style="font-size:11px;color:rgba(255,255,255,.65);background:rgba(255,255,255,.1);display:inline-block;padding:3px 12px;border-radius:20px">${provCompras.length} registro${provCompras.length !== 1 ? 's' : ''}</div></td>
     </tr></table>
   </div>
-  <table style="width:100%;border-collapse:collapse">
-    <thead><tr><th ${th}>Fecha</th><th ${th}>Factura</th><th ${th}>Vencimiento</th><th ${th} style="text-align:right">Total</th><th ${th} style="text-align:right">Pagado</th><th ${th} style="text-align:right">Saldo</th><th ${th} style="text-align:center">Estado</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <div style="padding:18px 32px;background:#f9f9f7;border-top:1px solid #eee;font-size:11px;color:#aaa;text-align:center">
-    Generado el ${new Date().toLocaleString('es-AR')} — Mercado Limpio Distribuidora<br>
-    <a href="mailto:administracion@mercadolimpio.ar" style="color:#16a34a;text-decoration:none">administracion@mercadolimpio.ar</a>
+
+  <div style="background:#fff;padding:15px 16px;border-left:1px solid #d4d1cb;border-right:1px solid #d4d1cb;border-bottom:1px solid #e8e5df">
+    <table style="width:100%;border-collapse:collapse"><tr>
+      ${kpiTd('Total comprado', m(tM), '#374151', '#f9fafb', '#e5e7eb')}
+      ${kpiTd('Total pagado', m(tP), '#16a34a', '#f0fdf4', '#bbf7d0')}
+      ${kpiTd('Saldo pendiente', m(tS), tS > 0 ? '#b45309' : '#16a34a', tS > 0 ? '#fffbeb' : '#f0fdf4', tS > 0 ? '#fde68a' : '#bbf7d0')}
+      ${tV > 0 ? kpiTd('&#9888; Vencido', m(tV), '#dc2626', '#fef2f2', '#fecaca') : kpiTd('Sin vencidos', '&#10003;', '#16a34a', '#f0fdf4', '#bbf7d0')}
+    </tr></table>
   </div>
+
+  <div style="background:#edeae4;padding:6px 16px;border-left:1px solid #d4d1cb;border-right:1px solid #d4d1cb">
+    <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#a09d96">Detalle de compras y pagos</span>
+  </div>
+
+  <div style="background:#f5f3ef;padding:12px 12px 2px;border:1px solid #d4d1cb;border-top:none">
+    ${compraBlocks}
+  </div>
+
+  <div style="background:#0d1b2e;border-radius:0 0 10px 10px;padding:15px 30px;text-align:center">
+    <div style="font-size:10px;color:rgba(255,255,255,.28);margin-bottom:3px">Generado el ${new Date().toLocaleString('es-AR')}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.5)">Mercado Limpio Distribuidora &nbsp;&middot;&nbsp; <a href="mailto:administracion@mercadolimpio.ar" style="color:#4ade80;text-decoration:none">administracion@mercadolimpio.ar</a></div>
+  </div>
+
 </div>
 </body></html>`;
 }
