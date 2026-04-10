@@ -263,7 +263,7 @@ select.fi{min-width:140px}input.fi{min-width:180px}
 
 <!-- ═══════ MODALS ═══════ -->
 <div class="overlay" id="m-compra"><div class="modal"><h2>Nueva compra</h2>
-<div class="fg"><label>Proveedor</label><div style="display:flex;gap:8px"><select id="nc-prov" style="flex:1"><option value="">Seleccionar...</option></select><button class="btn btn-sm" onclick="openNewProv()">＋ Nuevo</button></div></div>
+<div class="fg"><label>Proveedor</label><div style="display:flex;gap:8px"><select id="nc-prov" style="flex:1"><option value="">Seleccionar...</option></select><button class="btn btn-sm" onclick="openNewProv()">＋ Nuevo</button><button class="btn btn-sm" onclick="openProvs()" title="Gestionar proveedores">✏️ Gestionar</button></div></div>
 <div class="fg"><label>Monto total ($)</label><input type="number" id="nc-monto" inputmode="numeric"></div>
 <div class="fg-row"><div class="fg"><label>Fecha ingreso</label><input type="date" id="nc-fecha"></div><div class="fg"><label>Fecha vencimiento</label><input type="date" id="nc-venc"></div></div>
 <div class="fg"><label>N° Factura (opcional)</label><input type="text" id="nc-fact" placeholder="0001-00012345"></div>
@@ -290,7 +290,20 @@ select.fi{min-width:140px}input.fi{min-width:180px}
 </div></div>
 
 <div class="overlay" id="m-det"><div class="modal" style="max-width:560px"><h2 id="d-title"></h2><div id="d-body"></div>
-<div class="mf"><button class="btn" onclick="cm('m-det')">Cerrar</button><button class="btn" onclick="genPDF()">📄 PDF</button></div>
+<div class="mf"><button class="btn" onclick="cm('m-det')">Cerrar</button><button class="btn" onclick="genPDF()">📄 PDF</button><button class="btn" onclick="openEdit(curDet)">✏️ Editar</button></div>
+</div></div>
+
+<div class="overlay" id="m-provs"><div class="modal" style="max-width:420px"><h2>Gestionar proveedores</h2>
+<div id="provs-list" style="max-height:380px;overflow-y:auto"></div>
+<div class="mf"><button class="btn" onclick="cm('m-provs')">Cerrar</button></div>
+</div></div>
+
+<div class="overlay" id="m-edit"><div class="modal" style="max-width:400px"><h2>Editar compra</h2>
+<input type="hidden" id="edit-id">
+<div class="fg"><label>Monto total ($)</label><input type="number" id="edit-monto" inputmode="numeric"></div>
+<div class="fg"><label>Fecha vencimiento</label><input type="date" id="edit-venc"></div>
+<div class="fg"><label>Observaciones</label><textarea id="edit-obs" rows="2"></textarea></div>
+<div class="mf"><button class="btn" onclick="cm('m-edit')">Cancelar</button><button class="btn btn-p" onclick="saveEdit()">Guardar</button></div>
 </div></div>
 
 <div class="overlay" id="m-base"><div class="modal" style="max-width:600px">
@@ -320,6 +333,8 @@ const $=id=>document.getElementById(id);
 const auth=()=>({'X-Auth-Token':adminMode?PIN:'operativa'});
 async function apiG(p){try{const r=await fetch(API+p,{headers:auth()});return r.ok?r.json():null}catch{return null}}
 async function apiP(p,b){try{const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json',...auth()},body:JSON.stringify(b)});return r.json()}catch{return{error:'Sin conexión'}}}
+async function apiPut(p,b){try{const r=await fetch(API+p,{method:'PUT',headers:{'Content-Type':'application/json',...auth()},body:JSON.stringify(b)});return r.json()}catch{return{error:'Sin conexión'}}}
+async function apiDel(p){try{const r=await fetch(API+p,{method:'DELETE',headers:{'Content-Type':'application/json',...auth()}});return r.json()}catch{return{error:'Sin conexión'}}}
 
 // ═══ INIT ═══
 async function init(){
@@ -370,6 +385,10 @@ function openNewCompra(){$('nc-monto').value='';$('nc-fecha').value=hoy();const 
 async function saveCompra(){const p=$('nc-prov').value,m=$('nc-monto').value,f=$('nc-fecha').value,v=$('nc-venc').value;if(!p||!m||!f||!v){toast('Completá todos los campos','err');return}const r=await apiP('/api/compras',{proveedor:p,monto:Number(m),fecha:f,vencimiento:v,factura:$('nc-fact').value,observaciones:$('nc-obs').value,pagos:[]});if(r?.ok){compras.push(r.compra);cm('m-compra');toast('✓ Compra registrada','ok');popFilters();render()}else toast(r?.error||'Error','err')}
 function openNewProv(){$('np-nom').value='';om('m-prov')}
 async function saveProv(){const n=$('np-nom').value.trim();if(!n){toast('Escribí el nombre','err');return}const r=await apiP('/api/proveedores',{nombre:n});if(r?.ok){proveedores.push(r.proveedor||{nombre:n});popProvSel();$('nc-prov').value=n;cm('m-prov');toast('✓ Proveedor agregado','ok')}else toast(r?.error||'Error','err')}
+function openProvs(){const list=$('provs-list');if(!proveedores.length){list.innerHTML='<p style="color:var(--text3);padding:10px 0">No hay proveedores cargados</p>';om('m-provs');return}list.innerHTML=proveedores.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:15px">${p.nombre}</span><button class="btn btn-sm" style="color:var(--red);border-color:var(--red-border)" onclick="deleteProv('${p.nombre.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">🗑️ Eliminar</button></div>`).join('');om('m-provs')}
+async function deleteProv(nombre){if(!confirm(`¿Eliminar "${nombre}"?\nNo se puede deshacer.`))return;const r=await apiDel('/api/proveedores/'+encodeURIComponent(nombre));if(r?.ok){proveedores=proveedores.filter(p=>p.nombre!==nombre);popProvSel();openProvs();toast('✓ Proveedor eliminado','ok')}else toast(r?.error||'Error al eliminar','err')}
+function openEdit(id){const c=compras.find(x=>x.id===id);if(!c)return;$('edit-id').value=id;$('edit-monto').value=c.monto;$('edit-venc').value=c.vencimiento||'';$('edit-obs').value=c.observaciones||'';om('m-edit')}
+async function saveEdit(){const id=$('edit-id').value,m=$('edit-monto').value,v=$('edit-venc').value,obs=$('edit-obs').value;if(!m){toast('Ingresá el monto','err');return}const r=await apiPut('/api/compras/'+id,{monto:Number(m),vencimiento:v,observaciones:obs});if(r?.ok){const i=compras.findIndex(c=>c.id===id);if(i>=0){compras[i].monto=Number(m);if(v)compras[i].vencimiento=v;compras[i].observaciones=obs;}cm('m-edit');cm('m-det');toast('✓ Compra actualizada','ok');render()}else toast(r?.error||'Error al actualizar','err')}
 function openPago(id){const c=compras.find(x=>x.id===id);if(!c)return;const s=saldo(c);$('pg-id').value=id;$('pg-info').innerHTML=`<strong style="font-size:16px">${c.proveedor}</strong><br>Total: ${money(c.monto)}${c.factura?' · Fact: '+c.factura:''}<br><strong style="color:var(--red);font-size:18px">Saldo: ${money(s)}</strong>`;$('pg-monto').value=s;$('pg-fecha').value=hoy();$('pg-medio').value='';$('pg-obs').value='';document.querySelectorAll('.medio-fields').forEach(el=>el.classList.remove('visible'));document.querySelectorAll('.medio-fields input').forEach(el=>el.value='');om('m-pago')}
 function tgMedio(){const m=$('pg-medio').value;document.querySelectorAll('.medio-fields').forEach(el=>el.classList.remove('visible'));if(m&&m!=='efectivo'){const el=$('mf-'+m);if(el)el.classList.add('visible')}}
 async function savePago(){const id=$('pg-id').value,m=$('pg-monto').value,f=$('pg-fecha').value,medio=$('pg-medio').value;if(!m||!f||!medio){toast('Completá monto, fecha y medio','err');return}const pg={monto:Number(m),fecha:f,medio,observaciones:$('pg-obs').value};if(medio==='transferencia')pg.banco=$('pg-tb').value;else if(medio==='cheque_propio'){pg.cheque_banco=$('pg-cpb').value;pg.cheque_nro=$('pg-cpn').value;pg.cheque_fecha=$('pg-cpf').value}else if(medio==='cheque_terceros'){pg.cheque_banco=$('pg-ctb').value;pg.cheque_nro=$('pg-ctn').value;pg.cheque_librador=$('pg-ctl').value;pg.cheque_fecha=$('pg-ctf').value}const r=await apiP(`/api/compras/${id}/pago`,pg);if(r?.ok){const i=compras.findIndex(c=>c.id===id);if(i>=0){if(!compras[i].pagos)compras[i].pagos=[];compras[i].pagos.push({id:r.pago_id,...pg})}cm('m-pago');toast('✓ Pago registrado','ok');render()}else toast(r?.error||'Error','err')}
