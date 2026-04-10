@@ -582,6 +582,29 @@ export default {
       await kvPut(env, 'ml:compras', compras);
       return json({ ok: true, pago_id: pago.id });
     }
+    if (path.match(/^\/api\/compras\/[^/]+\/pago\/[^/]+$/) && request.method === 'PUT') {
+      if (!checkAuth(request, env, 'any')) return json({ error: 'No autorizado' }, 401);
+      const parts = path.split('/');
+      const compraId = parts[3], pagoId = parts[5];
+      const body = await request.json();
+      const compras = await kv(env, 'ml:compras', []);
+      const ci = compras.findIndex(c => c.id === compraId);
+      if (ci < 0) return json({ error: 'Compra no encontrada' }, 404);
+      const pi = (compras[ci].pagos || []).findIndex(p => p.id === pagoId);
+      if (pi < 0) return json({ error: 'Pago no encontrado' }, 404);
+      const p = compras[ci].pagos[pi];
+      if (body.monto !== undefined) p.monto = Number(body.monto);
+      if (body.fecha !== undefined) p.fecha = body.fecha;
+      if (body.medio !== undefined) p.medio = body.medio;
+      if (body.banco !== undefined) p.banco = body.banco;
+      if (body.cheque_nro !== undefined) p.cheque_nro = body.cheque_nro;
+      if (body.cheque_banco !== undefined) p.cheque_banco = body.cheque_banco;
+      if (body.cheque_librador !== undefined) p.cheque_librador = body.cheque_librador;
+      if (body.cheque_fecha !== undefined) p.cheque_fecha = body.cheque_fecha;
+      if (body.observaciones !== undefined) p.observaciones = body.observaciones;
+      await kvPut(env, 'ml:compras', compras);
+      return json({ ok: true, pago: p });
+    }
     if (path.match(/^\/api\/compras\/[^/]+$/) && request.method === 'PUT') {
       if (!checkAuth(request, env, 'any')) return json({ error: 'No autorizado' }, 401);
       const id = path.split('/')[3];
