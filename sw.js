@@ -1,5 +1,5 @@
 // CAMBIA ESTE NOMBRE/VERSIÓN PARA FORZAR LA ACTUALIZACIÓN EN LAS PCs DE LOS USUARIOS
-const CACHE_NAME = 'mercado-limpio-prov-v2';
+const CACHE_NAME = 'mercado-limpio-prov-v3';
 
 // Archivos básicos que la app necesita para cargar
 const urlsToCache = [
