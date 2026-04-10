@@ -694,20 +694,27 @@ export default {
     if (path === '/api/email/proveedor' && request.method === 'POST') {
       if (!checkAuth(request, env, 'any')) return json({ error: 'No autorizado' }, 401);
       try {
-        const { nombre, to, pdf_base64 } = await request.json();
-        if (!nombre || !to) return json({ error: 'Faltan parámetros: nombre y to' }, 400);
-        const compras = await kv(env, 'ml:compras', []);
-        const provCompras = compras.filter(c => c.proveedor === nombre).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
-        const fecha = new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
-        const html = buildProvEmailHTML(nombre, provCompras, fecha);
+        const body = await request.json();
+        const { to, subject, html, pdf_base64, nombre } = body;
+        if (!to) return json({ error: 'Falta parámetro: to' }, 400);
+        // Si el cliente manda el HTML pre-armado lo usamos directamente;
+        // de lo contrario lo generamos en el servidor (fallback legacy).
+        let emailHtml = html;
+        let emailSubject = subject;
+        if (!emailHtml && nombre) {
+          const compras = await kv(env, 'ml:compras', []);
+          const provCompras = compras.filter(c => c.proveedor === nombre).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+          const fecha = new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+          emailHtml = buildProvEmailHTML(nombre, provCompras, fecha);
+          emailSubject = emailSubject || `Estado de cuenta — ${nombre} al ${fecha}`;
+        }
+        if (!emailHtml) return json({ error: 'Falta el contenido del email' }, 400);
         const attachments = [];
         if (pdf_base64) {
-          attachments.push({
-            filename: `Estado_cuenta_${nombre.replace(/\s+/g, '_')}_${isoDate()}.pdf`,
-            content: pdf_base64,
-          });
+          const fn = nombre ? `Estado_cuenta_${nombre.replace(/\s+/g, '_')}_${isoDate()}.pdf` : `Estado_cuenta_${isoDate()}.pdf`;
+          attachments.push({ filename: fn, content: pdf_base64 });
         }
-        await sendResend(env, to, `Estado de cuenta — ${nombre} al ${fecha}`, html, attachments);
+        await sendResend(env, to, emailSubject || 'Estado de cuenta — Mercado Limpio', emailHtml, attachments);
         return json({ ok: true });
       } catch (e) {
         return json({ error: e.message }, 500);
