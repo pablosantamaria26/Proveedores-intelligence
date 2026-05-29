@@ -605,6 +605,17 @@ export default {
       await kvPut(env, 'ml:compras', compras);
       return json({ ok: true, pago: p });
     }
+    if (path.match(/^\/api\/compras\/[^/]+\/pago\/[^/]+$/) && request.method === 'DELETE') {
+      if (!checkAuth(request, env, 'any')) return json({ error: 'No autorizado' }, 401);
+      const parts = path.split('/');
+      const compraId = parts[3], pagoId = parts[5];
+      const compras = await kv(env, 'ml:compras', []);
+      const ci = compras.findIndex(c => c.id === compraId);
+      if (ci < 0) return json({ error: 'Compra no encontrada' }, 404);
+      compras[ci].pagos = (compras[ci].pagos || []).filter(p => p.id !== pagoId);
+      await kvPut(env, 'ml:compras', compras);
+      return json({ ok: true });
+    }
     if (path.match(/^\/api\/compras\/[^/]+$/) && request.method === 'PUT') {
       if (!checkAuth(request, env, 'any')) return json({ error: 'No autorizado' }, 401);
       const id = path.split('/')[3];
