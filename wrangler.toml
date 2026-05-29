@@ -1,4 +1,4 @@
-name = "mercadolimpio-intelligence"
+name = "proveedores-intelligence"
 main = "worker_ml.js"
 compatibility_date = "2024-01-01"
 

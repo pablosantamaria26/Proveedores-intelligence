@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1c1917">
 <title>Mercado Limpio — Proveedores</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -100,8 +101,22 @@ select.fi{min-width:140px}input.fi{min-width:180px}
 .detail-section{margin-bottom:18px}
 .detail-section h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);margin-bottom:10px}
 .detail-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}.detail-row:last-child{border-bottom:none}
-.pago-item{background:var(--surface2);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;font-size:14px}
-.pago-item .ph{display:flex;justify-content:space-between;font-weight:600}.pago-item .pm{color:var(--text3);font-size:12px;margin-top:4px}
+.pago-item{background:var(--surface2);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;font-size:14px;border:1px solid var(--border);transition:box-shadow .15s}
+.pago-item:hover{box-shadow:var(--sh)}
+.pago-item .ph{display:flex;justify-content:space-between;align-items:center;font-weight:600;gap:8px}.pago-item .pm{color:var(--text3);font-size:12px;margin-top:6px}
+.pago-item .ph-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pago-item .ph-amt{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green);font-size:15px;white-space:nowrap}
+.pago-item .ph-acts{display:flex;gap:6px;flex-shrink:0}
+.btn-icon{padding:6px 10px;font-size:14px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface);cursor:pointer;display:inline-flex;align-items:center;transition:all .12s;line-height:1}
+.btn-icon:hover{background:var(--surface2)}.btn-icon:active{transform:scale(.95)}
+.btn-icon.danger{border-color:var(--red-border);color:var(--red);background:var(--red-bg)}.btn-icon.danger:hover{background:var(--red);color:#fff}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}.btn-danger:hover{background:var(--red);color:#fff;border-color:var(--red)}
+/* Confirm modal */
+.conf-modal{max-width:360px}
+.conf-icon{font-size:44px;display:block;margin-bottom:14px}
+.conf-btns{display:flex;gap:10px;margin-top:4px}
+.conf-btns .btn{flex:1;justify-content:center;padding:13px 10px;font-size:15px}
+@media(max-width:600px){.conf-modal{border-radius:20px 20px 0 0!important;padding:28px 20px 32px!important}.conf-btns{flex-direction:column-reverse}.conf-btns .btn{padding:16px}}
 
 /* ═══ PABLO PANEL ═══ */
 #pp{display:none;min-height:100vh;background:#f0f2f5}
@@ -290,7 +305,7 @@ select.fi{min-width:140px}input.fi{min-width:180px}
 </div></div>
 
 <div class="overlay" id="m-det"><div class="modal" style="max-width:560px"><h2 id="d-title"></h2><div id="d-body"></div>
-<div class="mf" style="flex-wrap:wrap"><button class="btn" onclick="cm('m-det')">Cerrar</button><button class="btn" onclick="genPDF()">📄 PDF</button><button class="btn" onclick="openEdit(curDet)">✏️ Editar</button><button class="btn" style="color:var(--red);border-color:var(--red-border)" onclick="deleteCompra(curDet)">🗑️ Eliminar</button></div>
+<div class="mf" style="flex-wrap:wrap"><button class="btn" onclick="cm('m-det')">Cerrar</button><button class="btn" onclick="genPDF()">📄 PDF</button><button class="btn" onclick="openEdit(curDet)">✏️ Editar</button><button class="btn btn-danger" onclick="deleteCompra(curDet)">🗑️ Eliminar</button></div>
 </div></div>
 
 <div class="overlay" id="m-provs"><div class="modal" style="max-width:420px"><h2>Gestionar proveedores</h2>
@@ -348,6 +363,8 @@ select.fi{min-width:140px}input.fi{min-width:180px}
 </div>
 <div style="text-align:right"><button class="btn" onclick="cm('m-base')">Omitir por ahora →</button></div>
 </div></div>
+
+<div class="overlay" id="m-confirm"><div class="modal conf-modal" style="text-align:center"><span class="conf-icon" id="cm-icon">🗑️</span><h2 id="cm-title" style="border:none;padding:0;margin-bottom:8px"></h2><p id="cm-msg" style="color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:24px"></p><div class="conf-btns"><button class="btn" onclick="cm('m-confirm');confirmCallback=null">Cancelar</button><button class="btn btn-danger" id="cm-ok" onclick="doConfirm()">Eliminar</button></div></div></div>
 
 <div class="overlay" id="m-pin"><div class="modal" style="max-width:360px"><h2 style="text-align:center">🔒 Administración</h2>
 <div class="pin-body"><p style="color:var(--text2);margin-bottom:18px;font-size:14px">Ingresá tu PIN</p>
@@ -412,7 +429,7 @@ function render(){
   const tb=$('tb'),emp=$('emp');
   if(!list.length){tb.innerHTML='';emp.style.display='block';return}
   emp.style.display='none';
-  tb.innerHTML=list.map(c=>{const e=estado(c),s=saldo(c);return`<tr${e==='vencido'?' class="ven"':''}><td><span class="pn" onclick="openProvCuenta(decodeURIComponent('${encodeURIComponent(c.proveedor||'')}'))">${c.proveedor||'—'}</span></td><td class="dt hm">${c.factura||'—'}</td><td class="dt">${dateAR(c.fecha)}</td><td class="dt">${dateAR(c.vencimiento)}</td><td class="mn">${money(c.monto)}</td><td class="mn" style="color:${s>0?'var(--red)':'var(--green)'}">${money(s)}</td><td>${bdg(c)}</td><td style="white-space:nowrap">${e!=='pagado'?`<button class="btn btn-p btn-sm" onclick="openPago('${c.id}')">Pagar</button> `:''}<button class="btn btn-sm" onclick="openDet('${c.id}')">📋</button> <button class="btn btn-sm" style="color:var(--red);border-color:var(--red-border)" onclick="deleteCompra('${c.id}')" title="Eliminar compra">🗑️</button></td></tr>`}).join('');
+  tb.innerHTML=list.map(c=>{const e=estado(c),s=saldo(c);return`<tr${e==='vencido'?' class="ven"':''}><td><span class="pn" onclick="openProvCuenta(decodeURIComponent('${encodeURIComponent(c.proveedor||'')}'))">${c.proveedor||'—'}</span></td><td class="dt hm">${c.factura||'—'}</td><td class="dt">${dateAR(c.fecha)}</td><td class="dt">${dateAR(c.vencimiento)}</td><td class="mn">${money(c.monto)}</td><td class="mn" style="color:${s>0?'var(--red)':'var(--green)'}">${money(s)}</td><td>${bdg(c)}</td><td style="white-space:nowrap">${e!=='pagado'?`<button class="btn btn-p btn-sm" onclick="openPago('${c.id}')">Pagar</button> `:''}<button class="btn btn-sm" onclick="openDet('${c.id}')">📋</button> <button class="btn btn-sm btn-danger" onclick="deleteCompra('${c.id}')" title="Eliminar compra">🗑️</button></td></tr>`}).join('');
 }
 
 // ═══ COMPRA / PROV / PAGO ═══
@@ -420,11 +437,14 @@ function openNewCompra(){setMoney('nc-monto','');$('nc-fecha').value=hoy();const
 async function saveCompra(){const p=$('nc-prov').value,m=getMoney('nc-monto'),f=$('nc-fecha').value,v=$('nc-venc').value;if(!p||!m||!f||!v){toast('Completá todos los campos','err');return}const r=await apiP('/api/compras',{proveedor:p,monto:m,fecha:f,vencimiento:v,factura:$('nc-fact').value,observaciones:$('nc-obs').value,pagos:[]});if(r?.ok){compras.push(r.compra);cm('m-compra');toast('✓ Compra registrada','ok');popFilters();render()}else toast(r?.error||'Error','err')}
 function openNewProv(){$('np-nom').value='';om('m-prov')}
 async function saveProv(){const n=$('np-nom').value.trim();if(!n){toast('Escribí el nombre','err');return}const r=await apiP('/api/proveedores',{nombre:n});if(r?.ok){proveedores.push(r.proveedor||{nombre:n});popProvSel();$('nc-prov').value=n;cm('m-prov');toast('✓ Proveedor agregado','ok')}else toast(r?.error||'Error','err')}
-function openProvs(){const list=$('provs-list');if(!proveedores.length){list.innerHTML='<p style="color:var(--text3);padding:10px 0">No hay proveedores cargados</p>';om('m-provs');return}list.innerHTML=proveedores.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:8px"><span style="font-size:15px;flex:1">${p.nombre}</span><button class="btn btn-sm" onclick="cm('m-provs');openProvCuenta(decodeURIComponent('${encodeURIComponent(p.nombre)}'))">📊 Cuenta</button><button class="btn btn-sm" style="color:var(--red);border-color:var(--red-border)" onclick="deleteProv('${p.nombre.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">🗑️ Eliminar</button></div>`).join('');om('m-provs')}
-async function deleteProv(nombre){if(!confirm(`¿Eliminar "${nombre}"?\nNo se puede deshacer.`))return;const r=await apiDel('/api/proveedores/'+encodeURIComponent(nombre));if(r?.ok){proveedores=proveedores.filter(p=>p.nombre!==nombre);popProvSel();openProvs();toast('✓ Proveedor eliminado','ok')}else toast(r?.error||'Error al eliminar','err')}
+function openProvs(){const list=$('provs-list');if(!proveedores.length){list.innerHTML='<p style="color:var(--text3);padding:10px 0">No hay proveedores cargados</p>';om('m-provs');return}list.innerHTML=proveedores.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:8px"><span style="font-size:15px;flex:1">${p.nombre}</span><button class="btn btn-sm" onclick="cm('m-provs');openProvCuenta(decodeURIComponent('${encodeURIComponent(p.nombre)}'))">📊 Cuenta</button><button class="btn btn-sm btn-danger" onclick="deleteProv('${p.nombre.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">🗑️ Eliminar</button></div>`).join('');om('m-provs')}
+async function deleteProv(nombre){confirmAction('Eliminar proveedor',`¿Eliminar a "${nombre}"? No se puede deshacer.`,'Eliminar',async()=>{const r=await apiDel('/api/proveedores/'+encodeURIComponent(nombre));if(r?.ok){proveedores=proveedores.filter(p=>p.nombre!==nombre);popProvSel();openProvs();toast('✓ Proveedor eliminado','ok')}else toast(r?.error||'Error al eliminar','err')})}
 function openEdit(id){const c=compras.find(x=>x.id===id);if(!c)return;$('edit-id').value=id;setMoney('edit-monto',c.monto);$('edit-venc').value=c.vencimiento||'';$('edit-obs').value=c.observaciones||'';om('m-edit')}
-async function deleteCompra(id){const c=compras.find(x=>x.id===id);if(!c)return;if(!confirm(`¿Eliminar la compra de "${c.proveedor}"?\nFactura: ${c.factura||'—'} · Total: ${money(c.monto)}\n\nEsto eliminará también todos sus pagos. No se puede deshacer.`))return;const r=await apiDel('/api/compras/'+id);if(r?.ok){compras=compras.filter(x=>x.id!==id);cm('m-det');toast('✓ Compra eliminada','ok');render()}else toast(r?.error||'Error al eliminar','err')}
-async function deletePago(compraId,pagoId){if(!confirm('¿Eliminar este pago? No se puede deshacer.'))return;const r=await apiDel(`/api/compras/${compraId}/pago/${pagoId}`);if(r?.ok){const ci=compras.findIndex(c=>c.id===compraId);if(ci>=0)compras[ci].pagos=(compras[ci].pagos||[]).filter(p=>p.id!==pagoId);openDet(compraId);toast('✓ Pago eliminado','ok');render()}else toast(r?.error||'Error al eliminar','err')}
+async function deleteCompra(id){const c=compras.find(x=>x.id===id);if(!c)return;confirmAction('Eliminar compra',`Proveedor: ${c.proveedor}\nFactura: ${c.factura||'—'} · ${money(c.monto)}\n\nSe eliminarán también todos sus pagos.`,'Eliminar',async()=>{const r=await apiDel('/api/compras/'+id);if(r?.ok){compras=compras.filter(x=>x.id!==id);cm('m-det');toast('✓ Compra eliminada','ok');render()}else toast(r?.error||'Error al eliminar','err')})}
+async function deletePago(compraId,pagoId){const c=compras.find(x=>x.id===compraId);const p=(c?.pagos||[]).find(x=>x.id===pagoId);confirmAction('Eliminar pago',`${p?money(p.monto)+' — ':''}`+(p?medLbl(p.medio):'')+(p?.fecha?' · '+dateAR(p.fecha):'')+'\n\nNo se puede deshacer.','Eliminar',async()=>{const r=await apiDel(`/api/compras/${compraId}/pago/${pagoId}`);if(r?.ok){const ci=compras.findIndex(c=>c.id===compraId);if(ci>=0)compras[ci].pagos=(compras[ci].pagos||[]).filter(p=>p.id!==pagoId);openDet(compraId);toast('✓ Pago eliminado','ok');render()}else toast(r?.error||'Error al eliminar','err')})}
+let confirmCallback=null;
+function confirmAction(title,msg,btnLabel,onOk){$('cm-title').textContent=title;$('cm-msg').textContent=msg;$('cm-ok').textContent=btnLabel||'Confirmar';confirmCallback=onOk;om('m-confirm')}
+function doConfirm(){cm('m-confirm');if(confirmCallback){const cb=confirmCallback;confirmCallback=null;cb()}}
 async function saveEdit(){const id=$('edit-id').value,m=getMoney('edit-monto'),v=$('edit-venc').value,obs=$('edit-obs').value;if(!m){toast('Ingresá el monto','err');return}const r=await apiPut('/api/compras/'+id,{monto:m,vencimiento:v,observaciones:obs});if(r?.ok){const i=compras.findIndex(c=>c.id===id);if(i>=0){compras[i].monto=Number(m);if(v)compras[i].vencimiento=v;compras[i].observaciones=obs;}cm('m-edit');cm('m-det');toast('✓ Compra actualizada','ok');render()}else toast(r?.error||'Error al actualizar','err')}
 
 // ═══ CUENTA POR PROVEEDOR ═══
@@ -556,7 +576,7 @@ async function savePago(){const id=$('pg-id').value,m=getMoney('pg-monto'),f=$('
 let curDet=null;
 function openDet(id){curDet=id;const c=compras.find(x=>x.id===id);if(!c)return;const s=saldo(c),pagos=c.pagos||[],tp=pagos.reduce((s,p)=>s+Number(p.monto||0),0);
   $('d-title').textContent=c.proveedor;
-  $('d-body').innerHTML=`<div class="detail-section"><h3>Compra</h3><div class="detail-row"><span>Total</span><strong class="mn">${money(c.monto)}</strong></div><div class="detail-row"><span>Pagado</span><strong class="mn" style="color:var(--green)">${money(tp)}</strong></div><div class="detail-row"><span>Saldo</span><strong class="mn" style="color:${s>0?'var(--red)':'var(--green)'}">${money(s)}</strong></div><div class="detail-row"><span>Factura</span><span>${c.factura||'—'}</span></div><div class="detail-row"><span>Ingreso</span><span class="dt">${dateAR(c.fecha)}</span></div><div class="detail-row"><span>Vencimiento</span><span class="dt">${dateAR(c.vencimiento)}</span></div><div class="detail-row"><span>Estado</span>${bdg(c)}</div>${c.observaciones?`<div class="detail-row"><span>Obs.</span><span style="color:var(--text3)">${c.observaciones}</span></div>`:''}</div><div class="detail-section"><h3>Pagos (${pagos.length})</h3>${pagos.length===0?'<p style="color:var(--text3)">Sin pagos</p>':pagos.map(p=>`<div class="pago-item"><div class="ph"><span>${dateAR(p.fecha)} — ${medLbl(p.medio)}</span><div style="display:flex;align-items:center;gap:8px"><strong class="mn" style="color:var(--green)">${money(p.monto)}</strong>${p.id?`<button class="btn btn-sm" style="padding:4px 8px;font-size:12px" onclick="openEditPago('${c.id}','${p.id}')">✏️</button><button class="btn btn-sm" style="padding:4px 8px;font-size:12px;color:var(--red);border-color:var(--red-border)" onclick="deletePago('${c.id}','${p.id}')">🗑️</button>`:''}</div></div><div class="pm">${[p.banco?'Banco: '+p.banco:'',p.cheque_nro?'Ch#'+p.cheque_nro:'',p.cheque_banco?'Bco: '+p.cheque_banco:'',p.cheque_librador?'Librador: '+p.cheque_librador:'',p.cheque_fecha?'F.cheque: '+dateAR(p.cheque_fecha):'',p.observaciones].filter(Boolean).join(' · ')}</div></div>`).join('')}</div>`;
+  $('d-body').innerHTML=`<div class="detail-section"><h3>Compra</h3><div class="detail-row"><span>Total</span><strong class="mn">${money(c.monto)}</strong></div><div class="detail-row"><span>Pagado</span><strong class="mn" style="color:var(--green)">${money(tp)}</strong></div><div class="detail-row"><span>Saldo</span><strong class="mn" style="color:${s>0?'var(--red)':'var(--green)'}">${money(s)}</strong></div><div class="detail-row"><span>Factura</span><span>${c.factura||'—'}</span></div><div class="detail-row"><span>Ingreso</span><span class="dt">${dateAR(c.fecha)}</span></div><div class="detail-row"><span>Vencimiento</span><span class="dt">${dateAR(c.vencimiento)}</span></div><div class="detail-row"><span>Estado</span>${bdg(c)}</div>${c.observaciones?`<div class="detail-row"><span>Obs.</span><span style="color:var(--text3)">${c.observaciones}</span></div>`:''}</div><div class="detail-section"><h3>Pagos (${pagos.length})</h3>${pagos.length===0?'<p style="color:var(--text3)">Sin pagos</p>':pagos.map(p=>`<div class="pago-item"><div class="ph"><div class="ph-info"><span style="font-size:13px;color:var(--text2)">${dateAR(p.fecha)}</span><span style="font-size:14px">${medLbl(p.medio)}</span></div><div style="display:flex;align-items:center;gap:6px"><span class="ph-amt">${money(p.monto)}</span>${p.id?`<div class="ph-acts"><button class="btn-icon" onclick="openEditPago('${c.id}','${p.id}')" title="Editar pago">✏️</button><button class="btn-icon danger" onclick="deletePago('${c.id}','${p.id}')" title="Eliminar pago">🗑️</button></div>`:''}</div></div><div class="pm">${[p.banco?'Banco: '+p.banco:'',p.cheque_nro?'Ch#'+p.cheque_nro:'',p.cheque_banco?'Bco: '+p.cheque_banco:'',p.cheque_librador?'Librador: '+p.cheque_librador:'',p.cheque_fecha?'F.cheque: '+dateAR(p.cheque_fecha):'',p.observaciones].filter(Boolean).join(' · ')}</div></div>`).join('')}</div>`;
   om('m-det')}
 
 function genPDF(){const c=compras.find(x=>x.id===curDet);if(!c)return;const{jsPDF}=window.jspdf;const doc=new jsPDF();const pagos=c.pagos||[];const tp=pagos.reduce((s,p)=>s+Number(p.monto||0),0);const s=Number(c.monto||0)-tp;
