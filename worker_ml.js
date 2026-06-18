@@ -789,20 +789,37 @@ Reglas:
                   { text: prompt }
                 ]
               }],
-              generationConfig: { maxOutputTokens: 800, temperature: 0 }
+              generationConfig: {
+                maxOutputTokens: 800,
+                temperature: 0,
+                thinkingConfig: { thinkingBudget: 0 }
+              }
             })
           }
         );
 
         if (!res.ok) {
           const errText = await res.text();
-          throw new Error(`Gemini ${res.status}: ${errText.slice(0, 200)}`);
+          throw new Error(`Gemini ${res.status}: ${errText.slice(0, 300)}`);
         }
         const d = await res.json();
-        const text = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const match = text.match(/\[[\s\S]*\]/);
-        if (!match) throw new Error('La IA no pudo extraer la tabla de precios de la imagen');
-        const precios = JSON.parse(match[0]);
+
+        // gemini-2.5-flash puede devolver múltiples parts (thinking + texto)
+        // buscamos el part que contiene texto real
+        const parts = d.candidates?.[0]?.content?.parts || [];
+        const text = parts.map(p => p.text || '').join('');
+
+        if (!text) throw new Error('Gemini no devolvió texto. Respuesta: ' + JSON.stringify(d).slice(0, 300));
+
+        // soporta respuesta pura, o envuelta en ```json ... ```
+        let jsonStr = text;
+        const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (codeBlock) jsonStr = codeBlock[1];
+
+        const arrMatch = jsonStr.match(/\[[\s\S]*\]/);
+        if (!arrMatch) throw new Error('No se encontró JSON en la respuesta. Texto recibido: ' + text.slice(0, 300));
+
+        const precios = JSON.parse(arrMatch[0]);
         if (!Array.isArray(precios) || precios.length === 0) throw new Error('No se encontraron precios BIOBAG/MELLI en la imagen');
         return json({ ok: true, precios });
       } catch (e) {
