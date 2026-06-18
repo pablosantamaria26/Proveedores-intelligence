@@ -177,6 +177,19 @@ select.fi{min-width:140px}input.fi{min-width:180px}
 .insight-item{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:var(--rs);padding:10px 14px;margin-bottom:6px;font-size:13px}
 .spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+
+/* ═══ BOLSAS CALC ═══ */
+.bolsas-drop.drag-over{border-color:var(--blue)!important;background:var(--blue-bg)!important;transform:scale(1.01)}
+.brand-card{border-radius:var(--r);overflow:hidden;margin-bottom:18px;border:1px solid var(--border);box-shadow:var(--sh)}
+.brand-card.biobag{border-color:var(--green-border)}.brand-card.melli{border-color:var(--blue-border)}
+.brand-hdr{padding:12px 18px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.brand-card.biobag .brand-hdr{background:var(--green-bg);color:var(--green)}.brand-card.melli .brand-hdr{background:var(--blue-bg);color:var(--blue)}
+.bolsas-status{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;margin-top:12px}
+.hist-entry{border:1px solid var(--border);border-radius:var(--rs);margin-bottom:8px;overflow:hidden;background:var(--surface)}
+.hist-row{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;transition:background .12s;user-select:none}
+.hist-row:hover{background:var(--surface2)}.hist-chev{font-size:10px;color:var(--text3);transition:transform .2s}
+.hist-entry.open .hist-chev{transform:rotate(90deg)}.hist-detail{display:none;padding:14px;background:var(--surface2);border-top:1px solid var(--border);font-size:13px}
+.hist-entry.open .hist-detail{display:block}
 </style>
 </head>
 <body>
@@ -186,6 +199,7 @@ select.fi{min-width:140px}input.fi{min-width:180px}
 <div id="lm">
 <div class="l-hdr">
   <img id="l-logo" alt="ML"><h1>Proveedores</h1><small id="l-sub"></small>
+  <button class="lock-btn" onclick="enterBolsas()" title="Calculadora de costos">🧮</button>
   <button class="lock-btn" onclick="openPin()" title="Admin">🔒</button>
 </div>
 <div class="l-totals">
@@ -214,24 +228,31 @@ select.fi{min-width:140px}input.fi{min-width:180px}
 </div>
 <div class="pp-c">
   <div class="sec">
-    <h2>📸 Analizar precios de bolsas</h2>
-    <p style="color:var(--text3);font-size:13px;margin-bottom:18px">Subí una imagen del remito o lista de MART-PLAST. La IA extrae los precios y calcula el costo por paquete y por unidad de bolsas BIOBAG y MELLI.</p>
-    <div id="bolsas-drop"
+    <h2>🧮 Calculadora de Costos de Bolsas</h2>
+    <p style="color:var(--text3);font-size:13px;margin-bottom:18px">Subí una foto del remito o lista de MART-PLAST. La IA extrae automáticamente los precios BIOBAG y MELLI y calcula el costo por paquete.</p>
+    <div id="bolsas-drop" class="bolsas-drop"
       onclick="$('bolsas-img').click()"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="onBolsasDrop(event)"
       onmouseenter="this.style.borderColor='var(--blue)';this.style.background='var(--blue-bg)'"
-      onmouseleave="this.style.borderColor='var(--border)';this.style.background=''"
+      onmouseleave="this.classList.contains('drag-over')||(this.style.borderColor='',this.style.background='')"
       style="border:2px dashed var(--border);border-radius:var(--r);padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s">
-      <div style="font-size:40px;margin-bottom:10px">📷</div>
-      <div style="font-weight:700;margin-bottom:4px">Subir imagen</div>
-      <div style="font-size:13px;color:var(--text3)">JPG, PNG — remito o lista de precios MART-PLAST</div>
-      <div id="bolsas-preview"></div>
+      <div id="bolsas-drop-icon" style="font-size:40px;margin-bottom:10px">📷</div>
+      <div id="bolsas-drop-title" style="font-weight:700;margin-bottom:4px">Arrastrá o tocá para subir imagen</div>
+      <div id="bolsas-drop-sub" style="font-size:13px;color:var(--text3)">JPG, PNG — remito o lista de precios MART-PLAST</div>
       <input type="file" id="bolsas-img" accept="image/*" style="display:none" onchange="previewImg(this)">
     </div>
+    <div id="bolsas-status" class="bolsas-status" style="display:none"></div>
     <div style="margin-top:16px;text-align:center">
-      <button class="btn btn-p" onclick="analizarImagen()" id="btn-analizar">🔍 Analizar precios</button>
+      <button class="btn btn-p" onclick="analizarImagen()" id="btn-analizar" style="font-size:15px;padding:13px 32px">🔍 Analizar precios</button>
     </div>
   </div>
   <div id="bolsas-result"></div>
+  <div id="bolsas-hist" class="sec" style="display:none">
+    <h2>🕐 Historial de cálculos</h2>
+    <div id="bolsas-hist-list"></div>
+  </div>
 </div>
 </div>
 
@@ -551,6 +572,12 @@ function chkPin(){const v=$('pin-inp').value;if(v===PIN){adminMode=true;cm('m-pi
 function enterAdmin(){
   $('lm').style.display='none';$('pp').style.display='block';
   $('pp-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  loadHistorial();
+}
+function enterBolsas(){
+  $('lm').style.display='none';$('pp').style.display='block';
+  $('pp-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  loadHistorial();
 }
 function exitAdmin(){adminMode=false;$('pp').style.display='none';$('lm').style.display='block';render()}
 
@@ -566,15 +593,21 @@ const fmtP=n=>'$'+Math.ceil(n).toLocaleString('es-AR');
 
 function previewImg(input){
   const file=input.files[0];if(!file)return;
-  const r=new FileReader();
-  r.onload=e=>{$('bolsas-preview').innerHTML=`<img src="${e.target.result}" style="max-height:180px;max-width:100%;border-radius:8px;margin-top:14px">`};
-  r.readAsDataURL(file);
+  $('bolsas-drop-icon').textContent='✅';
+  $('bolsas-drop-title').textContent=file.name;
+  $('bolsas-drop-sub').textContent=(file.size/1024).toFixed(0)+' KB — listo para analizar';
+}
+function onBolsasDrop(e){
+  e.preventDefault();$('bolsas-drop').classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return toast('Soltá una imagen válida','err');
+  const dt=new DataTransfer();dt.items.add(file);$('bolsas-img').files=dt.files;previewImg($('bolsas-img'));
 }
 
 async function analizarImagen(){
   const input=$('bolsas-img');
   if(!input.files[0]){toast('Seleccioná una imagen primero','err');return}
-  const btn=$('btn-analizar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analizando...';
+  const btn=$('btn-analizar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analizando con IA...';
+  const st=$('bolsas-status');st.style.display='none';
   try{
     const file=input.files[0];
     const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file)});
@@ -582,6 +615,11 @@ async function analizarImagen(){
     if(!d?.ok)throw new Error(d?.error||'Error al analizar');
     preciosActuales=d.precios;
     mostrarPrecios(d.precios);
+    const nb=d.precios.filter(p=>p.marca==='BIOBAG').length,nm=d.precios.filter(p=>p.marca==='MELLI').length;
+    st.innerHTML=`✅ <strong>${d.precios.length} productos</strong> — BIOBAG: ${nb} &nbsp;·&nbsp; MELLI: ${nm} &nbsp;·&nbsp; ${new Date().toLocaleDateString('es-AR')}`;
+    st.style.display='flex';
+    apiP('/api/historial-costos',{precios:d.precios,archivo:file.name}).catch(()=>{});
+    loadHistorial();
     toast('✓ Precios actualizados','ok');
   }catch(e){toast('Error: '+e.message,'err')}
   finally{btn.disabled=false;btn.innerHTML='🔍 Analizar precios'}
@@ -592,26 +630,29 @@ function mostrarPrecios(precios){
   let html='';
   for(const marca of marcas){
     const items=precios.filter(p=>p.marca===marca);
-    html+=`<div class="sec" style="margin-bottom:16px"><h2>${marca==='BIOBAG'?'🟢':'🔵'} ${marca}</h2>
-    <div style="overflow-x:auto"><table class="pt" style="width:100%;min-width:400px">
-    <thead><tr><th>Medida</th><th>Precio Bulto</th><th>Paquetes/Bulto</th><th>Precio Paquete (x10 und)</th><th></th></tr></thead>
+    const cls=marca==='BIOBAG'?'biobag':'melli';
+    const icon=marca==='BIOBAG'?'🟢':'🔵';
+    html+=`<div class="brand-card ${cls}"><div class="brand-hdr">${icon} ${marca}</div>
+    <div style="overflow-x:auto;background:var(--surface)"><table class="pt" style="width:100%;min-width:360px">
+    <thead><tr><th>Medida</th><th>Precio Bulto</th><th>Paq/Bulto</th><th style="color:var(--${cls==='biobag'?'green':'blue'})">Precio Paquete</th><th></th></tr></thead>
     <tbody>`;
     for(const item of items){
       const key=`${item.marca}_${item.medida}`;
       const ref=UNIDADES_BULTO[key];
-      if(!ref){html+=`<tr><td colspan="5" style="color:var(--text3);font-size:13px">${item.medida}: sin referencia</td></tr>`;continue}
+      if(!ref){html+=`<tr><td colspan="5" style="color:var(--text3);font-size:13px;padding:10px 14px">${item.medida}: sin referencia</td></tr>`;continue}
       const precioPaq=item.precio_bulto/ref.paq;
+      const accentColor=cls==='biobag'?'var(--green)':'var(--blue)';
       html+=`<tr>
         <td><strong>${item.medida}</strong></td>
         <td class="mn" style="color:var(--text2)">${fmtP(item.precio_bulto)}</td>
         <td style="color:var(--text3);text-align:center">${ref.paq}</td>
-        <td class="mn" style="color:var(--green);font-size:17px">${fmtP(precioPaq)}</td>
+        <td class="mn" style="color:${accentColor};font-size:17px">${fmtP(precioPaq)}</td>
         <td><button class="btn btn-sm" onclick="copiarFila('${item.marca}','${item.medida}',${item.precio_bulto})" title="Copiar">📋</button></td>
       </tr>`;
     }
     html+=`</tbody></table></div></div>`;
   }
-  html+=`<div style="text-align:center;margin:4px 0 28px"><button class="btn btn-p" onclick="copiarTodo()" style="font-size:15px;padding:13px 32px">📋 Copiar todo para WhatsApp</button></div>`;
+  html+=`<div style="text-align:center;margin:8px 0 28px"><button class="btn btn-p" onclick="copiarTodo()" style="font-size:15px;padding:14px 36px;gap:8px">📋 Copiar todo para WhatsApp</button></div>`;
   $('bolsas-result').innerHTML=html;
 }
 
@@ -641,6 +682,61 @@ function copiarTodo(){
 }
 
 // ═══ HELPERS ═══
+// ═══ HISTORIAL COSTOS ═══
+async function loadHistorial(){
+  const data=await fetch(API+'/api/historial-costos',{headers:auth()}).then(r=>r.ok?r.json():[]).catch(()=>[]);
+  if(!data||!data.length){$('bolsas-hist').style.display='none';return}
+  $('bolsas-hist').style.display='block';
+  renderHistorial(data);
+}
+function renderHistorial(entries){
+  const list=$('bolsas-hist-list');
+  list.innerHTML=entries.map(e=>{
+    const nb=(e.precios||[]).filter(p=>p.marca==='BIOBAG').length;
+    const nm=(e.precios||[]).filter(p=>p.marca==='MELLI').length;
+    const detRows=(e.precios||[]).map(p=>{
+      const ref=UNIDADES_BULTO[`${p.marca}_${p.medida}`];
+      const precioPaq=ref?fmtP(p.precio_bulto/ref.paq):'—';
+      const cls=p.marca==='BIOBAG'?'var(--green)':'var(--blue)';
+      return `<tr><td style="color:${cls};font-weight:700;font-size:12px">${p.marca}</td><td><strong>${p.medida}</strong></td><td class="mn" style="color:var(--text2)">${fmtP(p.precio_bulto)}</td><td class="mn" style="color:${cls}">${precioPaq}</td></tr>`;
+    }).join('');
+    return `<div class="hist-entry" id="he-${e.id}">
+      <div class="hist-row" onclick="this.closest('.hist-entry').classList.toggle('open')">
+        <span style="font-size:16px">📦</span>
+        <div style="flex:1"><span style="font-weight:600">${e.fecha}</span> <span style="color:var(--text3);font-size:12px;margin-left:8px">${e.archivo||''}</span></div>
+        <span style="font-size:12px;color:var(--text3)">BIOBAG ${nb} · MELLI ${nm}</span>
+        <button class="btn btn-sm" onclick="event.stopPropagation();histCopiar('${e.id}')" title="Copiar WhatsApp">📋</button>
+        <button class="btn-icon danger" onclick="event.stopPropagation();histEliminar('${e.id}')" title="Eliminar">🗑️</button>
+        <span class="hist-chev">▶</span>
+      </div>
+      <div class="hist-detail"><table class="pt" style="width:100%"><thead><tr><th>Marca</th><th>Medida</th><th>Bulto</th><th>Paquete</th></tr></thead><tbody>${detRows}</tbody></table></div>
+    </div>`;
+  }).join('');
+}
+function histCopiar(id){
+  const entry=Array.from(document.querySelectorAll('[id^="he-"]')).find(el=>el.id==='he-'+id);
+  if(!entry)return;
+  fetch(API+'/api/historial-costos',{headers:auth()}).then(r=>r.json()).then(data=>{
+    const e=data.find(x=>x.id===id);if(!e)return;
+    const fecha=e.fecha;
+    const lines=[`📦 COSTO — ${fecha}`,``];
+    const marcas=[...new Set((e.precios||[]).map(p=>p.marca))].sort();
+    for(const marca of marcas){
+      lines.push(`*${marca}*`);
+      for(const item of (e.precios||[]).filter(p=>p.marca===marca)){
+        const ref=UNIDADES_BULTO[`${item.marca}_${item.medida}`];if(!ref)continue;
+        lines.push(`• ${item.medida} → $${Math.ceil(item.precio_bulto/ref.paq).toLocaleString('es-AR')}`);
+      }
+      lines.push(``);
+    }
+    navigator.clipboard.writeText(lines.join('\n')).then(()=>toast('✓ Copiado del historial','ok'));
+  });
+}
+async function histEliminar(id){
+  const r=await fetch(API+'/api/historial-costos/'+id,{method:'DELETE',headers:{'Content-Type':'application/json',...auth()}}).then(r=>r.json()).catch(()=>({}));
+  if(r?.ok){toast('✓ Eliminado','ok');loadHistorial()}else toast('Error al eliminar','err');
+}
+
 function om(id){$(id).classList.add('open')}function cm(id){$(id).classList.remove('open')}
 document.querySelectorAll('.overlay').forEach(el=>{el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')})});
 let tt;function toast(m,t=''){const el=$('toast');el.textContent=m;el.className='show'+(t?' '+t:'');clearTimeout(tt);tt=setTimeout(()=>el.className='',3000)}

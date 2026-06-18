@@ -757,7 +757,7 @@ export default {
 
     // ═══ PRECIOS BOLSAS ═══
     if (path === '/api/precios-bolsas' && request.method === 'POST') {
-      if (!checkAuth(request, env, 'pablo')) return json({ error: 'No autorizado' }, 401);
+      if (!checkAuth(request, env, 'any')) return json({ error: 'No autorizado' }, 401);
       try {
         const body = await request.json();
         const { imagen_base64, mime_type } = body;
@@ -820,6 +820,28 @@ Reglas:
       } catch (e) {
         return json({ ok: false, error: e.message }, 500);
       }
+    }
+
+    // ═══ HISTORIAL COSTOS ═══
+    if (path === '/api/historial-costos' && request.method === 'GET') {
+      if (!checkAuth(request, env, 'any')) return json({ error: 'No autorizado' }, 401);
+      return json(await kv(env, 'ml:historial_costos', []));
+    }
+    if (path === '/api/historial-costos' && request.method === 'POST') {
+      if (!checkAuth(request, env, 'any')) return json({ error: 'No autorizado' }, 401);
+      const body = await request.json();
+      const hist = await kv(env, 'ml:historial_costos', []);
+      const entry = { id: uid(), fecha: isoDate(), precios: body.precios || [], archivo: body.archivo || '' };
+      hist.unshift(entry);
+      await kvPut(env, 'ml:historial_costos', hist.slice(0, 30));
+      return json({ ok: true, entry });
+    }
+    if (path.match(/^\/api\/historial-costos\/[^/]+$/) && request.method === 'DELETE') {
+      if (!checkAuth(request, env, 'any')) return json({ error: 'No autorizado' }, 401);
+      const id = path.split('/')[3];
+      const hist = await kv(env, 'ml:historial_costos', []);
+      await kvPut(env, 'ml:historial_costos', hist.filter(e => e.id !== id));
+      return json({ ok: true });
     }
 
     return json({ error: 'Not found', path }, 404);
