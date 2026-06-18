@@ -314,16 +314,6 @@ select.fi{min-width:140px}input.fi{min-width:180px}
 </div>
 </div></div>
 
-<div class="overlay" id="m-base"><div class="modal" style="max-width:600px">
-<h2>📋 Base del año — primera carga</h2>
-<p style="color:var(--text2);font-size:14px;margin-bottom:20px;line-height:1.6">Cargá los <strong>3 archivos acumulados</strong> del año (enero hasta hace ~2 semanas). Esto le da a la IA la base para comparar.</p>
-<div class="pp-up" style="margin-bottom:16px">
-  <div class="uz" onclick="$('ub-g').click()"><div class="ui">📊</div><div class="ut">Ranking Ganancia</div><div class="us" id="sb-g"></div><input type="file" id="ub-g" accept=".xlsx,.xls,.csv" onchange="upBase(this,'ranking_ganancia')"></div>
-  <div class="uz" onclick="$('ub-v').click()"><div class="ui">💰</div><div class="ut">Ventas</div><div class="us" id="sb-v"></div><input type="file" id="ub-v" accept=".xlsx,.xls,.csv" onchange="upBase(this,'ventas')"></div>
-  <div class="uz" onclick="$('ub-c').click()"><div class="ui">👥</div><div class="ut">Clientes</div><div class="us" id="sb-c"></div><input type="file" id="ub-c" accept=".xlsx,.xls,.csv" onchange="upBase(this,'clientes')"></div>
-</div>
-<div style="text-align:right"><button class="btn" onclick="cm('m-base')">Omitir por ahora →</button></div>
-</div></div>
 
 <div class="overlay" id="m-confirm"><div class="modal conf-modal" style="text-align:center"><span class="conf-icon" id="cm-icon">🗑️</span><h2 id="cm-title" style="border:none;padding:0;margin-bottom:8px"></h2><p id="cm-msg" style="color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:24px"></p><div class="conf-btns"><button class="btn" onclick="cm('m-confirm');confirmCallback=null">Cancelar</button><button class="btn btn-danger" id="cm-ok" onclick="doConfirm()">Eliminar</button></div></div></div>
 

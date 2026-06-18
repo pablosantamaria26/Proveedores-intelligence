@@ -800,10 +800,9 @@ Reglas:
         }
         const d = await res.json();
 
-        // gemini-2.5-flash puede devolver múltiples parts (thinking + texto)
-        // buscamos el part que contiene texto real
+        // gemini-2.5-flash puede devolver thinking-parts (p.thought=true) antes del texto real
         const parts = d.candidates?.[0]?.content?.parts || [];
-        const text = parts.map(p => p.text || '').join('');
+        const text = parts.filter(p => !p.thought).map(p => p.text || '').join('');
 
         if (!text) throw new Error('Gemini no devolvió texto. Respuesta: ' + JSON.stringify(d).slice(0, 300));
 
