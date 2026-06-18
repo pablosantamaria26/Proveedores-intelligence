@@ -562,7 +562,7 @@ const UNIDADES_BULTO={
   'MELLI_80X110':{paq:30,und:10},'MELLI_90X120':{paq:30,und:10}
 };
 let preciosActuales=[];
-const fmtP=n=>'$'+Math.round(n).toLocaleString('es-AR');
+const fmtP=n=>'$'+Math.ceil(n).toLocaleString('es-AR');
 
 function previewImg(input){
   const file=input.files[0];if(!file)return;
@@ -617,23 +617,23 @@ function mostrarPrecios(precios){
 
 function copiarFila(marca,medida,precioBulto){
   const ref=UNIDADES_BULTO[`${marca}_${medida}`];if(!ref)return;
-  const precioPaq=Math.round(precioBulto/ref.paq).toLocaleString('es-AR');
-  const text=`${marca} ${medida} — Paquete x10: $${precioPaq}`;
+  const precioPaq=Math.ceil(precioBulto/ref.paq).toLocaleString('es-AR');
+  const text=`${marca} ${medida} — $${precioPaq}`;
   navigator.clipboard.writeText(text).then(()=>toast('✓ Copiado','ok'));
 }
 
 function copiarTodo(){
   if(!preciosActuales.length){toast('Primero analizá una imagen','err');return}
   const fecha=new Date().toLocaleDateString('es-AR');
-  const lines=[`📦 PRECIOS BOLSAS DE RESIDUO — ${fecha}`,``];
+  const lines=[`📦 COSTO — ${fecha}`,``];
   const marcas=[...new Set(preciosActuales.map(p=>p.marca))].sort();
   for(const marca of marcas){
     lines.push(`*${marca}*`);
     const items=preciosActuales.filter(p=>p.marca===marca);
     for(const item of items){
       const ref=UNIDADES_BULTO[`${item.marca}_${item.medida}`];if(!ref)continue;
-      const precioPaq=Math.round(item.precio_bulto/ref.paq).toLocaleString('es-AR');
-      lines.push(`• ${item.medida} → $${precioPaq} (paq x10)`);
+      const precioPaq=Math.ceil(item.precio_bulto/ref.paq).toLocaleString('es-AR');
+      lines.push(`• ${item.medida} → $${precioPaq}`);
     }
     lines.push(``);
   }
