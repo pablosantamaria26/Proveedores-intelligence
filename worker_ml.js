@@ -789,11 +789,7 @@ Reglas:
                   { text: prompt }
                 ]
               }],
-              generationConfig: {
-                maxOutputTokens: 800,
-                temperature: 0,
-                thinkingConfig: { thinkingBudget: 0 }
-              }
+              generationConfig: { maxOutputTokens: 800, temperature: 0 }
             })
           }
         );
