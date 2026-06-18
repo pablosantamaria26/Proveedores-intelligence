@@ -789,7 +789,7 @@ Reglas:
                   { text: prompt }
                 ]
               }],
-              generationConfig: { maxOutputTokens: 800, temperature: 0 }
+              generationConfig: { maxOutputTokens: 8192, temperature: 0 }
             })
           }
         );
