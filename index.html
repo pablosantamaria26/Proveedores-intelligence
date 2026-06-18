@@ -203,8 +203,8 @@ select.fi{min-width:140px}input.fi{min-width:180px}
   <button class="lock-btn" onclick="openPin()" title="Admin">🔒</button>
 </div>
 <div class="l-totals">
-  <div class="tc amber"><div class="tc-l">Pendiente de pago</div><div class="tc-v" id="t-pend">$0</div><div class="tc-s" id="t-pend-s">0 compras</div></div>
-  <div class="tc red"><div class="tc-l">Vencido sin pagar</div><div class="tc-v" id="t-venc">$0</div><div class="tc-s" id="t-venc-s">0 compras</div></div>
+  <div class="tc red" id="tc-venc"><div class="tc-l" id="tc-venc-l">Vencido sin pagar</div><div class="tc-v" id="t-venc">$0</div><div class="tc-s" id="t-venc-s">0 compras</div></div>
+  <div class="tc amber"><div class="tc-l">Por pagar</div><div class="tc-v" id="t-pend">$0</div><div class="tc-s" id="t-pend-s">0 compras</div></div>
   <div class="tc green"><div class="tc-l">Pagado</div><div class="tc-v" id="t-pag">$0</div><div class="tc-s" id="t-pag-s">0 compras</div></div>
 </div>
 <div class="l-bar">
@@ -214,7 +214,7 @@ select.fi{min-width:140px}input.fi{min-width:180px}
   <select class="fi" id="f-est" onchange="render()"><option value="pendientes">Pendientes / Vencidos</option><option value="todos">Todas</option><option value="pagadas">Pagadas</option></select>
 </div>
 <div class="l-tw">
-  <table class="tbl"><thead><tr><th>Proveedor</th><th class="hm">Factura</th><th>Ingreso</th><th>Vence</th><th>Total</th><th>Saldo</th><th>Estado</th><th></th></tr></thead><tbody id="tb"></tbody></table>
+  <table class="tbl"><thead><tr><th>Proveedor</th><th class="hm">Factura</th><th>Vence</th><th>Saldo</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody id="tb"></tbody></table>
   <div id="emp" class="empty" style="display:none"><div class="ei">✅</div><p>No hay compras pendientes</p></div>
 </div>
 </div>
@@ -378,7 +378,7 @@ function hoy(){return new Date().toISOString().slice(0,10)}
 function dias(v){if(!v)return null;const h=new Date();h.setHours(0,0,0,0);return Math.round((new Date(v+'T00:00:00')-h)/864e5)}
 function saldo(c){return Number(c.monto||0)-(c.pagos||[]).reduce((s,p)=>s+Number(p.monto||0),0)}
 function estado(c){if(saldo(c)<=0)return'pagado';const d=dias(c.vencimiento);if(d!==null&&d<0)return'vencido';if(d!==null&&d<=7)return'por_vencer';return'pendiente'}
-function bdg(c){const e=estado(c);if(e==='pagado')return'<span class="badge badge-green">✓ Pagado</span>';if(e==='vencido')return`<span class="badge badge-red">⚠ Vencido ${Math.abs(dias(c.vencimiento))}d</span>`;if(e==='por_vencer')return`<span class="badge badge-amber">⏰ ${dias(c.vencimiento)}d</span>`;const d=dias(c.vencimiento);return d!==null?`<span class="badge badge-blue">${d}d</span>`:'<span class="badge" style="background:var(--surface2);color:var(--text3)">Pendiente</span>'}
+function bdg(c){const e=estado(c);if(e==='pagado')return'<span class="badge badge-green">✓ Pagado</span>';if(e==='vencido')return`<span class="badge badge-red">⚠ Vencido hace ${Math.abs(dias(c.vencimiento))}d</span>`;if(e==='por_vencer')return`<span class="badge badge-amber">⏰ Vence en ${dias(c.vencimiento)}d</span>`;const d=dias(c.vencimiento);return d!==null?`<span class="badge badge-blue">Vence en ${d}d</span>`:'<span class="badge" style="background:var(--surface2);color:var(--text3)">Sin fecha</span>'}
 function medLbl(m){return{efectivo:'💵 Efectivo',transferencia:'🏦 Transferencia',cheque_propio:'📝 Cheque propio',cheque_terceros:'📄 Cheque terceros'}[m]||m||'—'}
 function onMoneyInput(el){const raw=el.value.replace(/\D/g,'');el.value=raw?'$ '+Number(raw).toLocaleString('es-AR',{maximumFractionDigits:0}):'';const len=el.value.length;try{el.setSelectionRange(len,len)}catch(e){}}
 function setMoney(id,v){const el=$(id);el.value=v?'$ '+Number(v).toLocaleString('es-AR',{maximumFractionDigits:0}):''}
@@ -394,14 +394,20 @@ function render(){
   }).sort((a,b)=>{const ea=estado(a),eb=estado(b);if(ea==='vencido'&&eb!=='vencido')return-1;if(eb==='vencido'&&ea!=='vencido')return 1;return(a.vencimiento||'').localeCompare(b.vencimiento||'')});
   const src=(q||yr)?list:compras;let pT=0,pC=0,vT=0,vC=0,gT=0,gC=0;
   src.forEach(c=>{const e=estado(c),s=saldo(c);if(e==='pagado'){gT+=Number(c.monto||0);gC++}else if(e==='vencido'){vT+=s;vC++}else{pT+=s;pC++}});
-  $('t-pend').textContent=money(pT);$('t-pend-s').textContent=pC+' compras';
-  $('t-venc').textContent=money(vT);$('t-venc-s').textContent=vC+' compras';
-  $('t-pag').textContent=money(gT);$('t-pag-s').textContent=gC+' compras';
-  $('l-sub').textContent=compras.filter(c=>estado(c)!=='pagado').length+' pendientes';
+  $('t-pend').textContent=money(pT);$('t-pend-s').textContent=pC+' compra'+(pC!==1?'s':'');
+  $('t-pag').textContent=money(gT);$('t-pag-s').textContent=gC+' compra'+(gC!==1?'s':'');
+  if(vC>0){$('tc-venc').className='tc red';$('tc-venc-l').textContent='Vencido sin pagar';$('t-venc').textContent=money(vT);$('t-venc-s').textContent=vC+' compra'+(vC!==1?'s':'')}
+  else{$('tc-venc').className='tc green';$('tc-venc-l').textContent='Sin vencimientos';$('t-venc').textContent='✅';$('t-venc-s').textContent='Todo al día'}
+  const _nV=compras.filter(c=>estado(c)==='vencido').length,_nPV=compras.filter(c=>estado(c)==='por_vencer').length,_nP=compras.filter(c=>!['pagado'].includes(estado(c))).length;
+  const _ls=$('l-sub');
+  if(_nV>0){_ls.textContent=`${_nV} vencido${_nV!==1?'s':''}`;_ls.style.cssText='color:var(--red);font-weight:700'}
+  else if(_nPV>0){_ls.textContent=`${_nPV} próximo${_nPV!==1?'s':''} a vencer`;_ls.style.cssText='color:var(--amber);font-weight:700'}
+  else if(_nP>0){_ls.textContent=`${_nP} pendiente${_nP!==1?'s':''}`;_ls.style.cssText='color:var(--text3);font-weight:500'}
+  else{_ls.textContent='Todo al día ✅';_ls.style.cssText='color:var(--green);font-weight:600'}
   const tb=$('tb'),emp=$('emp');
   if(!list.length){tb.innerHTML='';emp.style.display='block';return}
   emp.style.display='none';
-  tb.innerHTML=list.map(c=>{const e=estado(c),s=saldo(c);return`<tr${e==='vencido'?' class="ven"':''}><td><span class="pn" onclick="openProvCuenta(decodeURIComponent('${encodeURIComponent(c.proveedor||'')}'))">${c.proveedor||'—'}</span></td><td class="dt hm">${c.factura||'—'}</td><td class="dt">${dateAR(c.fecha)}</td><td class="dt">${dateAR(c.vencimiento)}</td><td class="mn">${money(c.monto)}</td><td class="mn" style="color:${s>0?'var(--red)':'var(--green)'}">${money(s)}</td><td>${bdg(c)}</td><td style="white-space:nowrap">${e!=='pagado'?`<button class="btn btn-p btn-sm" onclick="openPago('${c.id}')">Pagar</button> `:''}<button class="btn btn-sm" onclick="openDet('${c.id}')">📋</button> <button class="btn btn-sm btn-danger" onclick="deleteCompra('${c.id}')" title="Eliminar compra">🗑️</button></td></tr>`}).join('');
+  tb.innerHTML=list.map(c=>{const e=estado(c),s=saldo(c);return`<tr${e==='vencido'?' class="ven"':''}><td><span class="pn" onclick="openProvCuenta(decodeURIComponent('${encodeURIComponent(c.proveedor||'')}'))">${c.proveedor||'—'}</span></td><td class="dt hm">${c.factura||'—'}</td><td class="dt">${dateAR(c.vencimiento)}</td><td class="mn" style="color:${s>0?'var(--red)':'var(--green)'};">${money(s)}</td><td class="mn" style="color:var(--text3)">${money(c.monto)}</td><td>${bdg(c)}</td><td style="white-space:nowrap">${e==='vencido'?`<button class="btn btn-sm btn-danger" onclick="openPago('${c.id}')">💳 Pagar</button> `:e==='por_vencer'?`<button class="btn btn-sm" style="background:var(--amber-bg);color:var(--amber);border-color:var(--amber-border);font-weight:700" onclick="openPago('${c.id}')">Pagar</button> `:e!=='pagado'?`<button class="btn btn-p btn-sm" onclick="openPago('${c.id}')">Pagar</button> `:''}<button class="btn btn-sm" onclick="openDet('${c.id}')">📋</button> <button class="btn btn-sm btn-danger" onclick="deleteCompra('${c.id}')" title="Eliminar compra">🗑️</button></td></tr>`}).join('');
 }
 
 // ═══ COMPRA / PROV / PAGO ═══
