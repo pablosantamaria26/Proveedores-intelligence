@@ -213,79 +213,25 @@ select.fi{min-width:140px}input.fi{min-width:180px}
   <button class="pp-bk" onclick="exitAdmin()">← Proveedores</button>
 </div>
 <div class="pp-c">
-  <div class="pp-tabs" id="pp-tabs">
-    <button class="pp-tab on" data-t="dash">📊 Dashboard</button>
-    <button class="pp-tab" data-t="rep">📝 Reportes</button>
-    <button class="pp-tab" data-t="ant">🔮 Anticipación</button>
-    <button class="pp-tab" data-t="dat">📤 Datos</button>
-    <button class="pp-tab" data-t="mem">🧠 Memoria</button>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div class="ppv on" id="v-dash">
-    <div class="pp-kpis" id="pp-kpis"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px" id="pp-cols">
-      <div class="sec">
-        <h2>🏆 Top 20 Productos <span class="sub" id="rank-src">por margen</span></h2>
-        <div class="pt-scroll" id="pp-prod"></div>
-        <div id="pp-det"></div>
-      </div>
-      <div>
-        <div class="sec"><h2>📈 Tendencia</h2><div id="pp-tend"></div></div>
-        <div class="sec" style="margin-top:20px"><h2>💳 Deuda proveedores</h2><div id="pp-deuda"></div></div>
-        <div class="sec" style="margin-top:20px"><h2>👥 Top clientes</h2><div id="pp-cli"></div></div>
-      </div>
+  <div class="sec">
+    <h2>📸 Analizar precios de bolsas</h2>
+    <p style="color:var(--text3);font-size:13px;margin-bottom:18px">Subí una imagen del remito o lista de MART-PLAST. La IA extrae los precios y calcula el costo por paquete y por unidad de bolsas BIOBAG y MELLI.</p>
+    <div id="bolsas-drop"
+      onclick="$('bolsas-img').click()"
+      onmouseenter="this.style.borderColor='var(--blue)';this.style.background='var(--blue-bg)'"
+      onmouseleave="this.style.borderColor='var(--border)';this.style.background=''"
+      style="border:2px dashed var(--border);border-radius:var(--r);padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s">
+      <div style="font-size:40px;margin-bottom:10px">📷</div>
+      <div style="font-weight:700;margin-bottom:4px">Subir imagen</div>
+      <div style="font-size:13px;color:var(--text3)">JPG, PNG — remito o lista de precios MART-PLAST</div>
+      <div id="bolsas-preview"></div>
+      <input type="file" id="bolsas-img" accept="image/*" style="display:none" onchange="previewImg(this)">
+    </div>
+    <div style="margin-top:16px;text-align:center">
+      <button class="btn btn-p" onclick="analizarImagen()" id="btn-analizar">🔍 Analizar precios</button>
     </div>
   </div>
-
-  <!-- REPORTES -->
-  <div class="ppv" id="v-rep">
-    <div class="sec">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <h2 style="margin-bottom:0">📝 Reportes IA</h2>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-p btn-sm" onclick="genRep('semanal')" id="br-sem">📊 Reporte semanal</button>
-          <button class="btn btn-sm" onclick="genRep('base')" id="br-base">📋 Análisis de base</button>
-        </div>
-      </div>
-      <div id="pp-rep"><div class="rep-empty">Generá un reporte para ver el análisis de la IA.</div></div>
-    </div>
-    <div id="pp-rep-hist" style="margin-top:20px"></div>
-  </div>
-
-  <!-- ANTICIPACION -->
-  <div class="ppv" id="v-ant">
-    <div class="sec">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <h2 style="margin-bottom:0">🔮 Anticipación comercial</h2>
-        <button class="btn btn-p btn-sm" onclick="genRep('anticipacion')" id="br-ant">🔮 Generar anticipación</button>
-      </div>
-      <p style="color:var(--text3);font-size:13px;margin-bottom:16px">La IA analiza tus datos + estacionalidad del rubro para anticiparte a lo que se viene.</p>
-      <div id="pp-ant"><div class="rep-empty">Hacé click en "Generar anticipación" para que la IA analice qué se viene y qué conviene comprar.</div></div>
-    </div>
-  </div>
-
-  <!-- DATOS -->
-  <div class="ppv" id="v-dat">
-    <div class="sec">
-      <h2>📤 Carga semanal de datos</h2>
-      <p style="color:var(--text3);font-size:13px;margin-bottom:18px">Subí los 3 archivos Excel de la semana.</p>
-      <div class="pp-up">
-        <div class="uz" onclick="$('up-g').click()"><div class="ui">📊</div><div class="ut">Ranking Ganancia</div><div class="ud">Pos, Descripción, Costo, Ventas, Ganancia</div><div class="us" id="st-g"></div><input type="file" id="up-g" accept=".xlsx,.xls,.csv" onchange="upFile(this,'ranking_ganancia')"></div>
-        <div class="uz" onclick="$('up-v').click()"><div class="ui">💰</div><div class="ut">Ventas</div><div class="ud">Fecha, Cliente, Importe Bruto</div><div class="us" id="st-v"></div><input type="file" id="up-v" accept=".xlsx,.xls,.csv" onchange="upFile(this,'ventas')"></div>
-        <div class="uz" onclick="$('up-c').click()"><div class="ui">👥</div><div class="ut">Clientes</div><div class="ud">Cliente, Cantidad, Importe</div><div class="us" id="st-c"></div><input type="file" id="up-c" accept=".xlsx,.xls,.csv" onchange="upFile(this,'clientes')"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MEMORIA -->
-  <div class="ppv" id="v-mem">
-    <div class="sec">
-      <h2>🧠 Memoria de la IA</h2>
-      <p style="color:var(--text3);font-size:13px;margin-bottom:16px">Insights acumulados. La IA los usa para mejorar sus análisis semana a semana.</p>
-      <div id="pp-mem"></div>
-    </div>
-  </div>
+  <div id="bolsas-result"></div>
 </div>
 </div>
 
@@ -612,98 +558,104 @@ function genPDF(){const c=compras.find(x=>x.id===curDet);if(!c)return;const{jsPD
 // ═══ ADMIN ═══
 function openPin(){$('pin-inp').value='';$('pin-err').style.display='none';om('m-pin');setTimeout(()=>$('pin-inp').focus(),100)}
 function chkPin(){const v=$('pin-inp').value;if(v===PIN){adminMode=true;cm('m-pin');enterAdmin()}else if(v.length>=4){$('pin-err').style.display='block';$('pin-inp').value=''}}
-async function enterAdmin(){
+function enterAdmin(){
   $('lm').style.display='none';$('pp').style.display='block';
   $('pp-date').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  kpiCache=await apiG('/api/kpis');
-  if(kpiCache&&!kpiCache.estado?.tiene_base)om('m-base');
-  renderDash();loadMem();loadRepHist();
 }
 function exitAdmin(){adminMode=false;$('pp').style.display='none';$('lm').style.display='block';render()}
 
-// ═══ TABS ═══
-$('pp-tabs')?.addEventListener('click',e=>{const t=e.target.closest('.pp-tab');if(!t)return;document.querySelectorAll('.pp-tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.ppv').forEach(x=>x.classList.remove('on'));t.classList.add('on');$('v-'+t.dataset.t).classList.add('on')});
+// ═══ PRECIOS BOLSAS ═══
+const UNIDADES_BULTO={
+  'BIOBAG_45X60':{paq:100,und:10},'BIOBAG_50X70':{paq:100,und:10},'BIOBAG_60X90':{paq:50,und:10},
+  'BIOBAG_80X110':{paq:30,und:10},'BIOBAG_90X120':{paq:30,und:10},
+  'MELLI_45X60':{paq:100,und:10},'MELLI_50X70':{paq:100,und:10},'MELLI_60X90':{paq:50,und:10},
+  'MELLI_80X110':{paq:30,und:10},'MELLI_90X120':{paq:30,und:10}
+};
+let preciosActuales=[];
+const fmtP=n=>'$'+Math.round(n).toLocaleString('es-AR');
 
-// ═══ DASHBOARD ═══
-function renderDash(){
-  const k=kpiCache||{};const v=k.ventas||{};const rk=k.ranking||{};const cl=k.clientes||{};const d=k.deuda||{};
-  const semV=v.semana_actual||0,promB=v.promedio_base||0,varA=v.var_vs_anterior||0,varB=v.var_vs_base||0;
-  const tieneBase=k.estado?.tiene_base,tieneSem=k.estado?.tiene_semana;
-  $('pp-kpis').innerHTML=`
-    <div class="kp${semV>0?(varB>=0?' up':' dn'):''}"><div class="kp-l">Ventas período</div><div class="kp-v">${semV>0?money(semV):(tieneBase?money(rk.total_ventas||0):'Sin datos')}</div><div class="kp-s">${promB>0&&semV>0?(varB>=0?'↑':'↓')+Math.abs(varB)+'% vs promedio base':'${tieneSem?"Cargá base para comparar":"Cargá datos"}'}</div></div>
-    <div class="kp"><div class="kp-l">Margen global</div><div class="kp-v">${rk.margen_global||v.margen||0}%</div><div class="kp-s">${rk.cant_productos||0} productos</div></div>
-    <div class="kp${d.vencido>0?' dn':''}"><div class="kp-l">Deuda proveedores</div><div class="kp-v">${money(d.total||0)}</div><div class="kp-s">${d.activas||0} compras activas</div></div>
-    <div class="kp${d.vencido>0?' wn':''}"><div class="kp-l">Vencido</div><div class="kp-v">${money(d.vencido||0)}</div><div class="kp-s">${d.vencidas||0} facturas</div></div>`;
-  // Ranking source label
-  $('rank-src').textContent=(rk.source==='semana'?'semana actual':'base del año')+' · por margen';
-  // Top productos sorted by margin
-  let prods=(rk.productos||[]).slice();prods.sort((a,b)=>(b.margen||0)-(a.margen||0));prods=prods.slice(0,20);
-  window._prods=prods;$('pp-det').innerHTML='';
-  $('pp-prod').innerHTML=prods.length>0?`<table class="pt"><thead><tr><th>#</th><th>Producto</th><th>Margen</th><th>Ganancia</th><th>Ventas</th></tr></thead><tbody>${prods.map((p,i)=>`<tr onclick="showProd(${i})"><td class="pos">${i+1}</td><td style="font-weight:600">${p.desc||'—'}</td><td class="pc">${p.margen}%</td><td class="gm">${money(p.ganancia)}</td><td style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2)">${money(p.ventas||0)}</td></tr>`).join('')}</tbody></table>`:'<p style="color:var(--text3);padding:12px 0">📤 Cargá datos para ver el ranking</p>';
-  // Tendencia
-  if(semV>0&&promB>0){const icon=varB>5?'📈':varB<-5?'📉':'➡️';const lbl=varB>5?'Crecimiento':varB<-5?'En baja':'Estable';const clr=varB>5?'var(--green)':varB<-5?'var(--red)':'var(--amber)';
-    $('pp-tend').innerHTML=`<div class="tend"><div class="tend-i">${icon}</div><div class="tend-l" style="color:${clr}">${lbl}</div><div class="tend-d">Ventas semana: ${money(semV)}<br>Promedio semanal base: ${money(promB)}<br>Variación: ${varB>0?'+':''}${varB}%${v.var_vs_anterior!==0?`<br>Vs semana anterior: ${varA>0?'+':''}${varA}%`:''}</div></div>`;
-  } else if(tieneBase&&!tieneSem){$('pp-tend').innerHTML=`<div class="tend"><div class="tend-i">📤</div><div class="tend-l" style="color:var(--amber)">Falta la semana actual</div><div class="tend-d">Base cargada. Subí los datos de esta semana para ver la tendencia.</div></div>`}
-  else{$('pp-tend').innerHTML=`<div class="tend"><div class="tend-i">📋</div><div class="tend-l" style="color:var(--text3)">Sin datos</div><div class="tend-d">Cargá la base y datos semanales.</div></div>`}
-  // Deuda
-  const dp=d.por_proveedor||[];$('pp-deuda').innerHTML=dp.length>0?dp.map(([n,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px"><span style="color:var(--text2)">${n}</span><span class="mn" style="color:var(--red)">${money(v)}</span></div>`).join(''):'<p style="color:var(--text3)">Sin deuda activa ✓</p>';
-  // Top clientes
-  const cls=cl.lista||[];$('pp-cli').innerHTML=cls.length>0?`<table class="pt"><thead><tr><th>#</th><th>Cliente</th><th>Importe</th></tr></thead><tbody>${cls.slice(0,10).map((c,i)=>`<tr><td class="pos">${i+1}</td><td>${c.nombre}</td><td class="gm">${money(c.importe)}</td></tr>`).join('')}</tbody></table>`:'<p style="color:var(--text3)">Cargá ranking de clientes</p>';
-  if(window.innerWidth<700)$('pp-cols').style.gridTemplateColumns='1fr';
-}
-
-function showProd(i){const p=window._prods[i];if(!p)return;
-  $('pp-det').innerHTML=`<div class="prod-det"><h3>${p.desc}</h3><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"><div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase">Ventas</div><div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700">${money(p.ventas||0)}</div></div><div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase">Ganancia</div><div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--green)">${money(p.ganancia)}</div></div><div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase">Costo</div><div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700">${money(p.costo||0)}</div></div><div><div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase">Margen</div><div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--blue)">${p.margen}%</div></div></div><button class="btn btn-sm" style="margin-top:10px" onclick="$('pp-det').innerHTML=''">Cerrar</button></div>`}
-
-// ═══ REPORTES IA ═══
-async function genRep(tipo){
-  const btnMap={semanal:'br-sem',base:'br-base',anticipacion:'br-ant'};
-  const btn=$(btnMap[tipo]);if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span> Generando...';}
-  toast('Generando reporte con IA...');
-  const r=await apiP('/api/reporte',{tipo});
-  if(btn){btn.disabled=false;btn.innerHTML={semanal:'📊 Reporte semanal',base:'📋 Análisis de base',anticipacion:'🔮 Generar anticipación'}[tipo]}
-  if(r?.ok){
-    const html=`<div class="rep-dt">${r.fecha} — ${tipo}</div><div class="rep-txt">${(r.reporte||'').replace(/\n/g,'<br>')}</div>`;
-    if(tipo==='anticipacion')$('pp-ant').innerHTML=html;
-    else{$('pp-rep').innerHTML=html;loadRepHist()}
-    toast('✓ Reporte generado','ok');loadMem();
-  } else toast(r?.error||'Error generando reporte','err');
-}
-async function loadRepHist(){
-  const reps=await apiG('/api/reportes');if(!reps?.length){$('pp-rep-hist').innerHTML='';return}
-  $('pp-rep-hist').innerHTML=`<div class="sec"><h2>📚 Historial de reportes</h2>${reps.slice().reverse().slice(0,5).map(r=>`<div style="border-bottom:1px solid var(--border);padding:12px 0;cursor:pointer" onclick="this.querySelector('.rep-txt').style.display=this.querySelector('.rep-txt').style.display==='none'?'block':'none'"><div style="display:flex;justify-content:space-between"><strong>${r.tipo}</strong><span class="dt">${r.fecha}</span></div><div class="rep-txt" style="display:none;margin-top:8px">${(r.contenido||'').replace(/\n/g,'<br>')}</div></div>`).join('')}</div>`;
-}
-
-// ═══ MEMORIA IA ═══
-async function loadMem(){
-  const mem=await apiG('/api/memoria');if(!mem){$('pp-mem').innerHTML='<p style="color:var(--text3)">Sin datos</p>';return}
-  const ins=mem.insights||[];
-  $('pp-mem').innerHTML=`<div style="margin-bottom:12px"><strong>${mem.reportes||0}</strong> reportes generados · Último: ${mem.ultimo_reporte||'—'}</div>${ins.length>0?ins.slice().reverse().map(i=>`<div class="insight-item">💡 ${i}</div>`).join(''):'<p style="color:var(--text3)">La IA aún no generó insights. Generá un reporte para que empiece a aprender.</p>'}`;
-}
-
-// ═══ UPLOAD ═══
-function parseXLS(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});let h=0;for(let i=0;i<raw.length;i++){if(raw[i].filter(v=>v!=='').length>=3){h=i;break}}const hd=raw[h].map(x=>String(x||'').trim().toLowerCase().replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/[\s\.]+/g,'_').replace(/[^a-z0-9_]/g,'').slice(0,30));const rows=raw.slice(h+1).filter(r=>r.some(v=>v!==''&&v!=null)).map(r=>{const o={};hd.forEach((k,i)=>{if(k)o[k]=r[i]!=null?String(r[i]).trim():''});return o});res(rows)}catch(ex){rej(ex)}};r.readAsArrayBuffer(file)})}
-
-async function upFile(input,tipo){
+function previewImg(input){
   const file=input.files[0];if(!file)return;
-  const stMap={ranking_ganancia:'g',ventas:'v',clientes:'c'};
-  const st=$('st-'+stMap[tipo]);if(st)st.innerHTML='<span style="color:var(--amber)">⏳ Procesando...</span>';
-  toast('Procesando...');
-  try{const rows=await parseXLS(file);const r=await apiP('/api/upload/'+tipo,{rows,label:'sem_'+hoy()});
-    if(r?.ok){if(st)st.innerHTML=`<span style="color:var(--green)">✓ ${r.filas||rows.length} filas</span>`;toast('✓ '+tipo+' cargado','ok');kpiCache=await apiG('/api/kpis');renderDash()}
-    else{if(st)st.innerHTML=`<span style="color:var(--red)">✗ ${r?.error||'Error'}</span>`;toast(r?.error||'Error','err')}
-  }catch(ex){if(st)st.innerHTML=`<span style="color:var(--red)">✗ ${ex.message}</span>`;toast('Error: '+ex.message,'err')}
+  const r=new FileReader();
+  r.onload=e=>{$('bolsas-preview').innerHTML=`<img src="${e.target.result}" style="max-height:180px;max-width:100%;border-radius:8px;margin-top:14px">`};
+  r.readAsDataURL(file);
 }
 
-async function upBase(input,tipo){
-  const file=input.files[0];if(!file)return;
-  const stMap={ranking_ganancia:'g',ventas:'v',clientes:'c'};
-  const st=$('sb-'+stMap[tipo]);if(st)st.innerHTML='<span style="color:var(--amber)">⏳...</span>';
-  try{const rows=await parseXLS(file);const r=await apiP('/api/upload/base/'+tipo,{rows,label:'base_'+hoy()});
-    if(r?.ok){if(st)st.innerHTML=`<span style="color:var(--green)">✓ ${r.filas} filas</span>`;toast('✓ Base '+tipo+' cargada','ok');kpiCache=await apiG('/api/kpis');renderDash();
-      if(kpiCache?.estado?.base_completa){setTimeout(()=>{cm('m-base');toast('✓ Base completa. Dashboard listo.','ok')},600)}}
-    else{if(st)st.innerHTML=`<span style="color:var(--red)">✗ ${r?.error||'Error'}</span>`;toast(r?.error||'Error','err')}
-  }catch(ex){if(st)st.innerHTML=`<span style="color:var(--red)">✗ ${ex.message}</span>`;toast('Error','err')}
+async function analizarImagen(){
+  const input=$('bolsas-img');
+  if(!input.files[0]){toast('Seleccioná una imagen primero','err');return}
+  const btn=$('btn-analizar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analizando...';
+  try{
+    const file=input.files[0];
+    const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file)});
+    const d=await apiP('/api/precios-bolsas',{imagen_base64:base64,mime_type:file.type||'image/jpeg'});
+    if(!d?.ok)throw new Error(d?.error||'Error al analizar');
+    preciosActuales=d.precios;
+    mostrarPrecios(d.precios);
+    toast('✓ Precios actualizados','ok');
+  }catch(e){toast('Error: '+e.message,'err')}
+  finally{btn.disabled=false;btn.innerHTML='🔍 Analizar precios'}
+}
+
+function mostrarPrecios(precios){
+  const marcas=[...new Set(precios.map(p=>p.marca))].sort();
+  let html='';
+  for(const marca of marcas){
+    const items=precios.filter(p=>p.marca===marca);
+    html+=`<div class="sec" style="margin-bottom:16px"><h2>${marca==='BIOBAG'?'🟢':'🔵'} ${marca}</h2>
+    <div style="overflow-x:auto"><table class="pt" style="width:100%;min-width:560px">
+    <thead><tr><th>Medida</th><th>Precio Bulto</th><th>Paq/Bulto</th><th>Precio Paquete (x10)</th><th>Und/Bulto</th><th>Precio Unidad</th><th></th></tr></thead>
+    <tbody>`;
+    for(const item of items){
+      const key=`${item.marca}_${item.medida}`;
+      const ref=UNIDADES_BULTO[key];
+      if(!ref){html+=`<tr><td colspan="7" style="color:var(--text3);font-size:13px">${item.medida}: sin referencia</td></tr>`;continue}
+      const totalUnd=ref.paq*ref.und;
+      const precioPaq=item.precio_bulto/ref.paq;
+      const precioUnd=item.precio_bulto/totalUnd;
+      html+=`<tr>
+        <td><strong>${item.medida}</strong></td>
+        <td class="mn">${fmtP(item.precio_bulto)}</td>
+        <td style="color:var(--text3);text-align:center">${ref.paq}</td>
+        <td class="mn" style="color:var(--blue)">${fmtP(precioPaq)}</td>
+        <td style="color:var(--text3);text-align:center">${totalUnd}</td>
+        <td class="mn" style="color:var(--green)">${fmtP(precioUnd)}</td>
+        <td><button class="btn btn-sm" onclick="copiarFila('${item.marca}','${item.medida}',${item.precio_bulto})" title="Copiar fila">📋</button></td>
+      </tr>`;
+    }
+    html+=`</tbody></table></div></div>`;
+  }
+  html+=`<div style="text-align:center;margin:4px 0 28px"><button class="btn btn-p" onclick="copiarTodo()" style="font-size:15px;padding:13px 32px">📋 Copiar todo para WhatsApp</button></div>`;
+  $('bolsas-result').innerHTML=html;
+}
+
+function copiarFila(marca,medida,precioBulto){
+  const ref=UNIDADES_BULTO[`${marca}_${medida}`];if(!ref)return;
+  const totalUnd=ref.paq*ref.und;
+  const precioPaq=Math.round(precioBulto/ref.paq).toLocaleString('es-AR');
+  const precioUnd=(precioBulto/totalUnd).toFixed(2).replace('.',',');
+  const text=`${marca} ${medida} — Bulto: ${fmtP(precioBulto)} | Paquete x10: $${precioPaq} | Unidad: $${precioUnd}`;
+  navigator.clipboard.writeText(text).then(()=>toast('✓ Copiado','ok'));
+}
+
+function copiarTodo(){
+  if(!preciosActuales.length){toast('Primero analizá una imagen','err');return}
+  const fecha=new Date().toLocaleDateString('es-AR');
+  const lines=[`📦 PRECIOS BOLSAS DE RESIDUO — ${fecha}`,``];
+  const marcas=[...new Set(preciosActuales.map(p=>p.marca))].sort();
+  for(const marca of marcas){
+    lines.push(`*${marca}*`);
+    const items=preciosActuales.filter(p=>p.marca===marca);
+    for(const item of items){
+      const ref=UNIDADES_BULTO[`${item.marca}_${item.medida}`];if(!ref)continue;
+      const totalUnd=ref.paq*ref.und;
+      const precioPaq=Math.round(item.precio_bulto/ref.paq).toLocaleString('es-AR');
+      const precioUnd=(item.precio_bulto/totalUnd).toFixed(2).replace('.',',');
+      lines.push(`• ${item.medida} → Bulto: ${fmtP(item.precio_bulto)} | Paquete x10: $${precioPaq} | Unidad: $${precioUnd}`);
+    }
+    lines.push(``);
+  }
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>toast('✓ Copiado para WhatsApp','ok'));
 }
 
 // ═══ HELPERS ═══

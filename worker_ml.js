@@ -755,6 +755,61 @@ export default {
       }
     }
 
+    // ═══ PRECIOS BOLSAS ═══
+    if (path === '/api/precios-bolsas' && request.method === 'POST') {
+      if (!checkAuth(request, env, 'pablo')) return json({ error: 'No autorizado' }, 401);
+      try {
+        const body = await request.json();
+        const { imagen_base64, mime_type } = body;
+        if (!imagen_base64) return json({ error: 'Falta imagen_base64' }, 400);
+
+        const prompt = `Analizá esta imagen de una lista de precios o factura de MART-PLAST distribuidora de bolsas de residuo.
+Extraé ÚNICAMENTE las filas de bolsas BIOBAG y MELLI con su medida y precio.
+El "PRECIO VENTA UNITARIO" en la imagen representa el precio por BULTO completo.
+
+Respondé SOLO con un array JSON válido, sin texto adicional ni markdown:
+[{"marca":"BIOBAG","medida":"45X60","precio_bulto":36710},{"marca":"MELLI","medida":"45X60","precio_bulto":34222},...]
+
+Reglas:
+- marca: siempre "BIOBAG" o "MELLI" en mayúsculas
+- medida: formato "45X60" (números con X mayúscula entre ellos, sin espacios)
+- precio_bulto: número entero sin puntos ni signos ($), ejemplo: 36710
+- Incluir solo bolsas de residuo BIOBAG y MELLI, ignorar todos los otros productos`;
+
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                role: 'user',
+                parts: [
+                  { inline_data: { mime_type: mime_type || 'image/jpeg', data: imagen_base64 } },
+                  { text: prompt }
+                ]
+              }],
+              generationConfig: { maxOutputTokens: 800, temperature: 0 }
+            })
+          }
+        );
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Gemini ${res.status}: ${errText.slice(0, 200)}`);
+        }
+        const d = await res.json();
+        const text = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const match = text.match(/\[[\s\S]*\]/);
+        if (!match) throw new Error('La IA no pudo extraer la tabla de precios de la imagen');
+        const precios = JSON.parse(match[0]);
+        if (!Array.isArray(precios) || precios.length === 0) throw new Error('No se encontraron precios BIOBAG/MELLI en la imagen');
+        return json({ ok: true, precios });
+      } catch (e) {
+        return json({ ok: false, error: e.message }, 500);
+      }
+    }
+
     return json({ error: 'Not found', path }, 404);
   }
 };
