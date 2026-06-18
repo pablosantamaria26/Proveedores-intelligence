@@ -603,24 +603,20 @@ function mostrarPrecios(precios){
   for(const marca of marcas){
     const items=precios.filter(p=>p.marca===marca);
     html+=`<div class="sec" style="margin-bottom:16px"><h2>${marca==='BIOBAG'?'🟢':'🔵'} ${marca}</h2>
-    <div style="overflow-x:auto"><table class="pt" style="width:100%;min-width:560px">
-    <thead><tr><th>Medida</th><th>Precio Bulto</th><th>Paq/Bulto</th><th>Precio Paquete (x10)</th><th>Und/Bulto</th><th>Precio Unidad</th><th></th></tr></thead>
+    <div style="overflow-x:auto"><table class="pt" style="width:100%;min-width:400px">
+    <thead><tr><th>Medida</th><th>Precio Bulto</th><th>Paquetes/Bulto</th><th>Precio Paquete (x10 und)</th><th></th></tr></thead>
     <tbody>`;
     for(const item of items){
       const key=`${item.marca}_${item.medida}`;
       const ref=UNIDADES_BULTO[key];
-      if(!ref){html+=`<tr><td colspan="7" style="color:var(--text3);font-size:13px">${item.medida}: sin referencia</td></tr>`;continue}
-      const totalUnd=ref.paq*ref.und;
+      if(!ref){html+=`<tr><td colspan="5" style="color:var(--text3);font-size:13px">${item.medida}: sin referencia</td></tr>`;continue}
       const precioPaq=item.precio_bulto/ref.paq;
-      const precioUnd=item.precio_bulto/totalUnd;
       html+=`<tr>
         <td><strong>${item.medida}</strong></td>
-        <td class="mn">${fmtP(item.precio_bulto)}</td>
+        <td class="mn" style="color:var(--text2)">${fmtP(item.precio_bulto)}</td>
         <td style="color:var(--text3);text-align:center">${ref.paq}</td>
-        <td class="mn" style="color:var(--blue)">${fmtP(precioPaq)}</td>
-        <td style="color:var(--text3);text-align:center">${totalUnd}</td>
-        <td class="mn" style="color:var(--green)">${fmtP(precioUnd)}</td>
-        <td><button class="btn btn-sm" onclick="copiarFila('${item.marca}','${item.medida}',${item.precio_bulto})" title="Copiar fila">📋</button></td>
+        <td class="mn" style="color:var(--green);font-size:17px">${fmtP(precioPaq)}</td>
+        <td><button class="btn btn-sm" onclick="copiarFila('${item.marca}','${item.medida}',${item.precio_bulto})" title="Copiar">📋</button></td>
       </tr>`;
     }
     html+=`</tbody></table></div></div>`;
@@ -631,10 +627,8 @@ function mostrarPrecios(precios){
 
 function copiarFila(marca,medida,precioBulto){
   const ref=UNIDADES_BULTO[`${marca}_${medida}`];if(!ref)return;
-  const totalUnd=ref.paq*ref.und;
   const precioPaq=Math.round(precioBulto/ref.paq).toLocaleString('es-AR');
-  const precioUnd=(precioBulto/totalUnd).toFixed(2).replace('.',',');
-  const text=`${marca} ${medida} — Bulto: ${fmtP(precioBulto)} | Paquete x10: $${precioPaq} | Unidad: $${precioUnd}`;
+  const text=`${marca} ${medida} — Paquete x10: $${precioPaq}`;
   navigator.clipboard.writeText(text).then(()=>toast('✓ Copiado','ok'));
 }
 
@@ -648,10 +642,8 @@ function copiarTodo(){
     const items=preciosActuales.filter(p=>p.marca===marca);
     for(const item of items){
       const ref=UNIDADES_BULTO[`${item.marca}_${item.medida}`];if(!ref)continue;
-      const totalUnd=ref.paq*ref.und;
       const precioPaq=Math.round(item.precio_bulto/ref.paq).toLocaleString('es-AR');
-      const precioUnd=(item.precio_bulto/totalUnd).toFixed(2).replace('.',',');
-      lines.push(`• ${item.medida} → Bulto: ${fmtP(item.precio_bulto)} | Paquete x10: $${precioPaq} | Unidad: $${precioUnd}`);
+      lines.push(`• ${item.medida} → $${precioPaq} (paq x10)`);
     }
     lines.push(``);
   }
