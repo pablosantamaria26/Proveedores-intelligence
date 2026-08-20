@@ -569,9 +569,33 @@ function tgMedio(){const m=$('pg-medio').value;document.querySelectorAll('.medio
 function tgMedioEditPg(){const m=$('epg-medio').value;document.querySelectorAll('.epg-mf').forEach(el=>el.classList.remove('visible'));if(m&&m!=='efectivo'){const el=$('emf-'+m);if(el)el.classList.add('visible')}}
 function openEditPago(compraId,pagoId){const c=compras.find(x=>x.id===compraId);if(!c)return;const p=(c.pagos||[]).find(x=>x.id===pagoId);if(!p)return;$('epg-compra-id').value=compraId;$('epg-id').value=pagoId;setMoney('epg-monto',p.monto);$('epg-fecha').value=p.fecha||'';$('epg-medio').value=p.medio||'';$('epg-obs').value=p.observaciones||'';document.querySelectorAll('.epg-mf').forEach(el=>el.classList.remove('visible'));if(p.medio&&p.medio!=='efectivo'){const el=$('emf-'+p.medio);if(el)el.classList.add('visible')}if(p.medio==='transferencia'){$('epg-tb').value=p.banco||''}else if(p.medio==='cheque_propio'){$('epg-cpb').value=p.cheque_banco||'';$('epg-cpn').value=p.cheque_nro||'';$('epg-cpf').value=p.cheque_fecha||''}else if(p.medio==='cheque_terceros'){$('epg-ctb').value=p.cheque_banco||'';$('epg-ctn').value=p.cheque_nro||'';$('epg-ctl').value=p.cheque_librador||'';$('epg-ctf').value=p.cheque_fecha||''}om('m-edit-pago')}
 async function saveEditPago(){const compraId=$('epg-compra-id').value,pagoId=$('epg-id').value,m=getMoney('epg-monto'),f=$('epg-fecha').value,medio=$('epg-medio').value;if(!m||!f||!medio){toast('Completá monto, fecha y medio','err');return}const body={monto:m,fecha:f,medio,observaciones:$('epg-obs').value};if(medio==='transferencia')body.banco=$('epg-tb').value;else if(medio==='cheque_propio'){body.cheque_banco=$('epg-cpb').value;body.cheque_nro=$('epg-cpn').value;body.cheque_fecha=$('epg-cpf').value}else if(medio==='cheque_terceros'){body.cheque_banco=$('epg-ctb').value;body.cheque_nro=$('epg-ctn').value;body.cheque_librador=$('epg-ctl').value;body.cheque_fecha=$('epg-ctf').value}const r=await apiPut(`/api/compras/${compraId}/pago/${pagoId}`,body);if(r?.ok){const ci=compras.findIndex(c=>c.id===compraId);if(ci>=0){const pi=(compras[ci].pagos||[]).findIndex(p=>p.id===pagoId);if(pi>=0)Object.assign(compras[ci].pagos[pi],body)}cm('m-edit-pago');if(curProvCuenta&&$('m-prov-cuenta').classList.contains('open'))openProvCuenta(curProvCuenta);else openDet(compraId);toast('✓ Pago actualizado','ok');render()}else toast(r?.error||'Error al actualizar','err')}
-async function savePago(){const id=$('pg-id').value,m=getMoney('pg-monto'),f=$('pg-fecha').value,medio=$('pg-medio').value;if(!m||!f||!medio){toast('Completá monto, fecha y medio','err');return}const pg={monto:m,fecha:f,medio,observaciones:$('pg-obs').value};if(medio==='transferencia')pg.banco=$('pg-tb').value;else if(medio==='cheque_propio'){pg.cheque_banco=$('pg-cpb').value;pg.cheque_nro=$('pg-cpn').value;pg.cheque_fecha=$('pg-cpf').value}else if(medio==='cheque_terceros'){pg.cheque_banco=$('pg-ctb').value;pg.cheque_nro=$('pg-ctn').value;pg.cheque_librador=$('pg-ctl').value;pg.cheque_fecha=$('pg-ctf').value}const r=await apiP(`/api/compras/${id}/pago`,pg);if(r?.ok){const i=compras.findIndex(c=>c.id===id);if(i>=0){if(!compras[i].pagos)compras[i].pagos=[];compras[i].pagos.push({id:r.pago_id,...pg})}const _compra=i>=0?compras[i]:null,_ns=_compra?saldo(_compra):1;if(_ns<=0&&_compra){curProvCuenta=_compra.proveedor;mostrarDialogoPagadoCompleto(_compra.proveedor)}else{cm('m-pago');toast('✓ Pago registrado','ok');render()}}else toast(r?.error||'Error','err')}
-function mostrarDialogoPagadoCompleto(proveedor){$('pago-comp-prov').textContent='Proveedor: '+proveedor;cm('m-pago');om('m-pago-completo');}
-function pagadoCompletoWA(){cm('m-pago-completo');toast('✓ Pago registrado','ok');render();waProvCuenta();}
+async function savePago(){const id=$('pg-id').value,m=getMoney('pg-monto'),f=$('pg-fecha').value,medio=$('pg-medio').value;if(!m||!f||!medio){toast('Completá monto, fecha y medio','err');return}const pg={monto:m,fecha:f,medio,observaciones:$('pg-obs').value};if(medio==='transferencia')pg.banco=$('pg-tb').value;else if(medio==='cheque_propio'){pg.cheque_banco=$('pg-cpb').value;pg.cheque_nro=$('pg-cpn').value;pg.cheque_fecha=$('pg-cpf').value}else if(medio==='cheque_terceros'){pg.cheque_banco=$('pg-ctb').value;pg.cheque_nro=$('pg-ctn').value;pg.cheque_librador=$('pg-ctl').value;pg.cheque_fecha=$('pg-ctf').value}const r=await apiP(`/api/compras/${id}/pago`,pg);if(r?.ok){const i=compras.findIndex(c=>c.id===id);if(i>=0){if(!compras[i].pagos)compras[i].pagos=[];compras[i].pagos.push({id:r.pago_id,...pg})}const _compra=i>=0?compras[i]:null,_ns=_compra?saldo(_compra):1;if(_ns<=0&&_compra){curProvCuenta=_compra.proveedor;mostrarDialogoPagadoCompleto(_compra.proveedor,_compra.id)}else{cm('m-pago');toast('✓ Pago registrado','ok');render()}}else toast(r?.error||'Error','err')}
+let curPagadoCompletoId=null;
+function mostrarDialogoPagadoCompleto(proveedor,id){curPagadoCompletoId=id;$('pago-comp-prov').textContent='Proveedor: '+proveedor;cm('m-pago');om('m-pago-completo');}
+function pagadoCompletoWA(){cm('m-pago-completo');toast('✓ Pago registrado','ok');render();waCompraSaldada(curPagadoCompletoId);}
+function waCompraSaldada(id){
+  const c=compras.find(x=>x.id===id);if(!c)return;
+  const pagos=c.pagos||[],tp=pagos.reduce((s,p)=>s+Number(p.monto||0),0);
+  let msg=`✅ *Factura saldada — ${c.proveedor}*\nFecha: ${new Date().toLocaleDateString('es-AR')}\n\n📋 *Compra*`;
+  msg+=`\n${c.factura?'Factura: '+c.factura:'Sin Nº factura'}`;
+  msg+=`\nIngreso: ${dateAR(c.fecha)} | Vence: ${dateAR(c.vencimiento)}`;
+  msg+=`\nTotal: *${money(c.monto)}*`;
+  if(pagos.length){
+    msg+=`\n\n💳 *Pagos:*`;
+    pagos.forEach(p=>{
+      let det=medLbl(p.medio).replace(/[^\w\sáéíóúñÁÉÍÓÚÑ.#]/g,'').trim();
+      if(p.banco)det+=' — '+p.banco;
+      if(p.cheque_nro)det+=' Ch#'+p.cheque_nro;
+      if(p.cheque_banco)det+=' ('+p.cheque_banco+')';
+      if(p.cheque_librador)det+=' Lib:'+p.cheque_librador;
+      if(p.cheque_fecha)det+=' Vto:'+dateAR(p.cheque_fecha);
+      if(p.observaciones)det+=' · '+p.observaciones;
+      msg+=`\n   • ${dateAR(p.fecha)} — ${money(p.monto)} — ${det}`;
+    });
+  }
+  msg+=`\n\n✅ *Saldo: ${money(0)}* — Deuda cancelada\n\n_administracion@mercadolimpio.ar_`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
+}
 function pagadoCompletoEmail(){cm('m-pago-completo');toast('✓ Pago registrado','ok');render();openProvCuenta(curProvCuenta);setTimeout(()=>emailProvCuenta(),200);}
 function pagadoCompletoCerrar(){cm('m-pago-completo');toast('✓ Pago registrado','ok');render();}
 
