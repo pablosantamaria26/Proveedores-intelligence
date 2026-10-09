@@ -239,9 +239,9 @@ select.fi{min-width:140px}input.fi{min-width:180px}
       onmouseleave="this.classList.contains('drag-over')||(this.style.borderColor='',this.style.background='')"
       style="border:2px dashed var(--border);border-radius:var(--r);padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s">
       <div id="bolsas-drop-icon" style="font-size:40px;margin-bottom:10px">📷</div>
-      <div id="bolsas-drop-title" style="font-weight:700;margin-bottom:4px">Arrastrá o tocá para subir imagen</div>
-      <div id="bolsas-drop-sub" style="font-size:13px;color:var(--text3)">JPG, PNG — remito o lista de precios MART-PLAST</div>
-      <input type="file" id="bolsas-img" accept="image/*" style="display:none" onchange="previewImg(this)">
+      <div id="bolsas-drop-title" style="font-weight:700;margin-bottom:4px">Arrastrá o tocá para subir foto o PDF</div>
+      <div id="bolsas-drop-sub" style="font-size:13px;color:var(--text3)">JPG, PNG o PDF — remito o lista de precios MART-PLAST</div>
+      <input type="file" id="bolsas-img" accept="image/*,application/pdf,.pdf" style="display:none" onchange="previewImg(this)">
     </div>
     <div id="bolsas-status" class="bolsas-status" style="display:none"></div>
     <div style="margin-top:16px;text-align:center">
@@ -645,19 +645,20 @@ function previewImg(input){
 }
 function onBolsasDrop(e){
   e.preventDefault();$('bolsas-drop').classList.remove('drag-over');
-  const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return toast('Soltá una imagen válida','err');
+  const file=e.dataTransfer.files[0];if(!file||!(file.type.startsWith('image/')||file.type==='application/pdf'||/\.pdf$/i.test(file.name)))return toast('Soltá una imagen o un PDF','err');
   const dt=new DataTransfer();dt.items.add(file);$('bolsas-img').files=dt.files;previewImg($('bolsas-img'));
 }
 
 async function analizarImagen(){
   const input=$('bolsas-img');
-  if(!input.files[0]){toast('Seleccioná una imagen primero','err');return}
+  if(!input.files[0]){toast('Seleccioná una imagen o PDF primero','err');return}
+  if(input.files[0].size>15*1024*1024){toast('El archivo supera 15 MB','err');return}
   const btn=$('btn-analizar');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analizando con IA...';
   const st=$('bolsas-status');st.style.display='none';
   try{
     const file=input.files[0];
     const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file)});
-    const d=await apiP('/api/precios-bolsas',{imagen_base64:base64,mime_type:file.type||'image/jpeg'});
+    const d=await apiP('/api/precios-bolsas',{imagen_base64:base64,mime_type:file.type||(/\.pdf$/i.test(file.name)?'application/pdf':'image/jpeg')});
     if(!d?.ok)throw new Error(d?.error||'Error al analizar');
     preciosActuales=d.precios;
     mostrarPrecios(d.precios);

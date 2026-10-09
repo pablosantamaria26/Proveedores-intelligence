@@ -763,7 +763,7 @@ export default {
         const { imagen_base64, mime_type } = body;
         if (!imagen_base64) return json({ error: 'Falta imagen_base64' }, 400);
 
-        const prompt = `Analizá esta imagen de una lista de precios o factura de MART-PLAST distribuidora de bolsas de residuo.
+        const prompt = `Analizá este documento (imagen o PDF, puede tener varias páginas) de una lista de precios o factura de MART-PLAST distribuidora de bolsas de residuo.
 Extraé ÚNICAMENTE las filas de bolsas BIOBAG y MELLI con su medida y precio.
 El "PRECIO VENTA UNITARIO" en la imagen representa el precio por BULTO completo.
 
