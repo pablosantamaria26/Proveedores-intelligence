@@ -765,7 +765,12 @@ export default {
 
         const prompt = `Analizá este documento (imagen o PDF, puede tener varias páginas) de una lista de precios o factura de MART-PLAST distribuidora de bolsas de residuo.
 Extraé ÚNICAMENTE las filas de bolsas BIOBAG y MELLI con su medida y precio.
-El "PRECIO VENTA UNITARIO" en la imagen representa el precio por BULTO completo.
+Formato habitual (lista "REVENDEDORES MAYORISTAS"): sección "BOLSAS DE RESIDUO Y CONSORCIO" con filas tipo
+"45X60 BIOBAG | 100 paquetes x10und | $40.472" y "45X60 MELLI | 100 paquetes x10und | $37.729"; el precio está en la columna "PRECIO BULTO".
+En facturas/remitos, el "PRECIO VENTA UNITARIO" también es el precio por BULTO completo.
+La fila tiene que decir literalmente BIOBAG o MELLI. Ignorá CAMISETA, ESCOMBRO, ARRANQUE, TITAN, ECO, GUANTES, PAPEL, CINTA y cualquier otra fila aunque tenga la misma medida.
+Medidas válidas: 45X60, 50X70, 60X90, 80X110, 90X120.
+En la lista los precios usan punto de miles ($40.472 = 40472).
 
 Respondé SOLO con un array JSON válido, sin texto adicional ni markdown:
 [{"marca":"BIOBAG","medida":"45X60","precio_bulto":36710},{"marca":"MELLI","medida":"45X60","precio_bulto":34222},...]
@@ -814,8 +819,18 @@ Reglas:
         const arrMatch = jsonStr.match(/\[[\s\S]*\]/);
         if (!arrMatch) throw new Error('No se encontró JSON en la respuesta. Texto recibido: ' + text.slice(0, 300));
 
-        const precios = JSON.parse(arrMatch[0]);
-        if (!Array.isArray(precios) || precios.length === 0) throw new Error('No se encontraron precios BIOBAG/MELLI en la imagen');
+        const MEDIDAS = ['45X60', '50X70', '60X90', '80X110', '90X120'];
+        const vistos = new Set();
+        const precios = (JSON.parse(arrMatch[0]) || [])
+          .map(p => ({
+            marca: String(p.marca || '').toUpperCase().trim(),
+            medida: String(p.medida || '').toUpperCase().replace(/\s/g, ''),
+            precio_bulto: Math.round(Number(String(p.precio_bulto).replace(/[^\d.,]/g, '').replace(/\./g, '').replace(',', '.')))
+          }))
+          .filter(p => ['BIOBAG', 'MELLI'].includes(p.marca) && MEDIDAS.includes(p.medida) && p.precio_bulto > 0)
+          .filter(p => { const k = p.marca + '_' + p.medida; if (vistos.has(k)) return false; vistos.add(k); return true; })
+          .sort((a, b) => a.marca.localeCompare(b.marca) || MEDIDAS.indexOf(a.medida) - MEDIDAS.indexOf(b.medida));
+        if (precios.length === 0) throw new Error('No se encontraron precios BIOBAG/MELLI en la imagen');
         return json({ ok: true, precios });
       } catch (e) {
         return json({ ok: false, error: e.message }, 500);
